@@ -148,50 +148,30 @@ class Solver:
         print("Ergebnis der Simulation:", e[0])
 
 
-
-    #TODO hier richtige Werte übernehmen
     def g_xyt(self, ec,e_r,t):
 
         funktionPart_1 = np.dot(np.transpose(self.p_r), self.ar_vc)
 
         parameters = np.dot(np.transpose(self.ar_vc), self.p_r)
-        #parameters = np.dot(parameters, self.e_r)
 
+        funktionPart_1 = np.dot(funktionPart_1, self.gr_not_vc(np.dot(parameters, e_r), ec, t))
+        functionPart_2 = np.dot(np.transpose(self.p_r), self.al_vc)
 
-        #ec = np.array([0])
-        #y= e_r?
-        funktionPart_2 = np.dot(funktionPart_1, self.gr_not_vc(np.dot(parameters, e_r), ec, t))
-        functionPart_3 = np.dot(np.transpose(self.p_r), self.al_vc)
-        #functionPart_3 = np.dot(functionPart_3, self.w_matrix)
-        
-        v_matrix = self.v_matrix
-        #v_matrix = np.delete(self.v_matrix, len(self.v_matrix)-1, axis=0)
-        print("self v_matrix:", v_matrix)
+        qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
 
-        print("v * i_star", v_matrix.dot(self.i_star(t)))
-
-
-        print("self v_matrix:", self.v_matrix)
-        print("i_star(t):", self.i_star(t))
-
-        #temp = np.dot(v_matrix, self.i_star(t))
-        qliJl_i = self.jl - v_matrix.dot(self.i_star(t))
-
-        functionPart_3 = np.dot(functionPart_3, qliJl_i)
+        functionPart_2 = np.dot(functionPart_2, qliJl_i)
         e = self.i_r(t)
-        return np.add(np.add(funktionPart_2,functionPart_3),self.i_r(t))
+
+        return np.add(np.add(funktionPart_1,functionPart_2),self.i_r(t))
 
 
     #TODO ifs wenn irgendwas leer ist
     def gr_not_vc(self, x,ec,t):
-        #print("self.ar_v:",self.ar_v)
-        #print("p_c:", self.p_c)
-        #print("ec:", ec)
-        if not self.ar_v.tolist() or not self.p_c.tolist():
+        
+        if not (self.ar_v).tolist() or not (self.p_c).tolist():
             parameter1 = 0
         else:
-            #parameter1 = np.dot(np.dot(np.transpose(self.ar_v), self.p_c), ec)
-
+            
             parameter1= self.ar_v.transpose().dot(self.p_c)
             
             parameter1= parameter1.dot(ec)
@@ -220,14 +200,14 @@ class Solver:
         ml_y = len(ml)
 
         zeros_1 = np.zeros((ml_x, mc_y))
-        zeros_2 = np.zeros((mc_y, ml_x))
+        zeros_2 = np.zeros((mc_x, ml_y))
 
         matrix = np.array([[mc, zeros_1], [zeros_2, ml]])
 
         mc = np.concatenate((mc, zeros_1), axis=0)
         ml = np.concatenate((zeros_2, ml), axis= 0)
         matrix= np.concatenate((mc,ml), axis=1)
-        #print(matrix)
+
         return matrix
 
     def matrix_mc(self, ec, t):
@@ -242,8 +222,7 @@ class Solver:
     def matrix_ml(self, jl_i, t):
 
         v_matrix = self.v_matrix
-        #v_matrix = np.delete(self.v_matrix, len(self.v_matrix)-1, axis=0)
-        
+
         qliJl_i = self.jl - v_matrix.dot(self.i_star(t))
 
         matrix = self.w_matrix.transpose().dot(self.ableitung_l_nachx(qliJl_i, t)).dot(self.w_matrix)
