@@ -12,9 +12,13 @@ from scipy.sparse.linalg import lsqr
 class Solver:
 
     def __init__(self, schaltung):
-        self.schaltung = schaltung 
+        self.schaltung = schaltung
+        e = [1.1,2,3.3,4]
+        self.jl = 0
+        #TODO funktionert nicht, weil überbestimmtes System
+        #self.startwertEntkopplung(e)
 
-    def simulate(self):
+    def createInzidenzMatrices(self):
 
         self.inzidenz_v = self.schaltung.inzidenz_v
         self.inzidenz_c = self.schaltung.inzidenz_c
@@ -28,71 +32,53 @@ class Solver:
         #TODO leeren Fall überarbeiten
         self.q_v = []
         self.p_v = []
-        #Vs löschen
-        #if inzidenz_v:
-        print("inzidenz_v:")
-        print(self.inzidenz_v)
-        #input()
-        self.c_v = self.findeZusammenhangskomponente(self.schaltung.inzidenz_v)
-        print(self.c_v)
-        print("---------------------------------")
-        self.q_v = self.createQArray(self.c_v, self.isMasse(self.inzidenz_v))
 
+        #Vs löschen
+        self.c_v = self.findeZusammenhangskomponente(self.schaltung.inzidenz_v)
+
+        self.q_v = self.createQArray(self.c_v, self.isMasse(self.inzidenz_v))
         self.p_v = self.createPArray(self.c_v, self.isMasse(self.inzidenz_v))
-        #input()
-        #C_s löschen
-        #ac_v = q_v.transpose() * np.array(inzidenz_c)
+
+        #Delete V_sources
         print(self.inzidenz_c)
 
         self.ac_v = np.dot(self.q_v.transpose(), (self.inzidenz_c))
-        print("Ac_v:")
-        print(self.ac_v)
+        print("Ac_v: \n", self.ac_v)
         
-
-        
+        #Delete Inductors
         self.c_c = self.findeZusammenhangskomponente(np.array(self.ac_v).transpose())
         self.q_c = self.createQArray(self.c_c, self.isMasse(self.ac_v))
         self.p_c = self.createPArray(self.c_c, self.isMasse(self.ac_v))
         
-        #Ar ohne c und v berechnen:
         self.ar_vc = np.dot(np.dot(self.q_c.transpose(), self.q_v.transpose()), self.inzidenz_r)
-        print("Ar_vc:")
-        print(self.ar_vc)
-        #input()
+        print("Ar_vc: \n", self.ar_vc)
+
+        #Delete Resistors
         self.c_r = self.findeZusammenhangskomponente(np.array(self.ar_vc).transpose())
         self.q_r = self.createQArray(self.c_r, self.isMasse(self.ar_vc))
         self.p_r = self.createPArray(self.c_r, self.isMasse(self.ar_vc))
         
-        #Berechne Al ohne v, c und r
-        #Q_c tranponiert mal q_v transponiert mal q_r tranponiert:
         tempMatrix = np.dot(self.q_r.transpose(), self.q_c.transpose())
         tempMatrix = np.dot(tempMatrix, self.q_v.transpose())     
         self.al_vcr = np.dot(tempMatrix, self.inzidenz_l)
-        print("Al_vcr")
-        print(self.al_vcr)
+        print("Al_vcr: \n", self.al_vcr)
 
-        #c_l = self.findeZusammenhangskomponente(np.array(al_vcr).transpose())
-        #q_l = self.createQArray(c_l, self.isMasse(al_vcr))
-        #p_l = self.createPArray(c_l, self.isMasse(al_vcr))
 
-    #Berechne Al ohne v, c
+        #Berechne Al ohne v, c
         tempMatrix = np.dot(self.q_c.transpose(), self.q_v.transpose())     
         self.al_vc = np.dot(tempMatrix, self.inzidenz_l)
-        print("Al_cv")
-        print(self.al_vc)
+        print("Al_cv: \n", self.al_vc)
 
         #Berechne al ohne v
  
         self.al_v = np.dot(self.q_v.transpose(), self.inzidenz_l)
-        print("Al_v")
-        print(self.al_v)
+        print("Al_v: \n", self.al_v)
         
         
         #tempMatrix = np.dot(self.q_r.transpose(), tempMatrix)
         tempMatrix = self.q_r.transpose().dot(tempMatrix)
         self.ai_vcr = np.dot(tempMatrix, self.inzidenz_i)
-        print("Ai_cvr")
-        print(self.ai_vcr)
+        print("Ai_cvr: \n", self.ai_vcr)
 
 
         self.ar_v = np.dot(np.transpose(self.q_v), self.inzidenz_r)
@@ -102,77 +88,64 @@ class Solver:
 
         self.ail_vcr = np.concatenate((np.array(self.al_vcr),np.array(self.ai_vcr)),axis=1)
         print("ail_vcr:", self.ail_vcr)
-        #self.solve(None)
 
         tempMatrix = np.dot(self.q_c.transpose(), self.q_v.transpose())     
         self.ai_vc = tempMatrix.dot(self.inzidenz_i)
         print("ai_vc:", self.ai_vc)
 
+
+    def simulate(self):
+
+        self.createInzidenzMatrices()
+
         #self.v_matrix, self.w_matrix = createV_W_Matrix.tiefensuche(self.ail_vcr)
         #TODO berechnen neu wegen Beispiel. hier Fehler
         self.w_matrix = np.array([[]])
         self.v_matrix = np.array([[1]])
+        
 
         #A mal Q muss nämlich immer 0 ergeben, bzw A transponiert
         #print("TEEEEST:", np.dot(self.w_matrix, np.transpose(self.ail_vcr)))
-
-        e = [1.1,2,3.3,4]
-        self.startwertEntkopplung(e)
-        
-
    
         print("------------Begin Calculation------------------")
 
-        #TODO Berechnen, jl setzen
-        self.jl = 10
-
+    
         #TODO eigentlich Vektor und kein Skalar
         ec = [2]
+        e_r = [0,0]
+        j_li = 0
         x = ec
         t = 10
         f = lambda y: self.g_xyt(x,y,t)
         
-        #print("f(59):",f(5))
+       
 
 
-        #e_r = optimize.newton(f, [[0,0], [0,0]], tol=1e-10, maxiter=50000)
-        e_r = optimize.newton(f, [0,0],tol=1e-10, maxiter=50000)
+        
+        e_r = optimize.newton(f, e_r,tol=1e-10, maxiter=50000)
 
         print("Ergebnis Newton:", e_r)
-        
-        """mc = self.matrix_mc(4, 13)
-        #mc[0] = (np.append(mc[0], [0]))
-        print("matrix mc:", mc)
-        mc = np.resize(mc, (2, 2))
-        print("reshaped:", mc)
-        mc[0][1] = 0
-        mc[1][0] = 0
-        mc[1][1] = 0
-        print("matrix mc new:", mc)
-        print("matrix ml:",self.matrix_ml(4,13))"""
-        j_li = 0
     
-        print("Test Function1:", self.function1(ec, j_li , e_r , 10))
-        print("Test Function2:", self.function2(ec, j_li, e_r , 10))
+        #print("Test Function1:", self.function1(ec, j_li , e_r , 10))
+        #print("Test Function2:", self.function2(ec, j_li, e_r , 10))
        
-        print("Test ganze Function:", self.function(ec, j_li , e_r , 10))
+        #print("Test ganze Function:", self.function(ec, j_li , e_r , 10))
 
-        print(self.matrix_mc(ec, 10))
-        print(self.matrix_ml(j_li, 10))
-        m = self.matrix(ec, j_li, 10)
+        #print(self.matrix_mc(ec, 10))
+        #print(self.matrix_ml(j_li, 10))
+        m = self.matrix(ec, j_li, t)
         print("M:", m.tolist())
 
 
-        b = self.function(ec, j_li , e_r , 10)
-        print("b:", b.tolist())
-        print("b-shape:",b.shape)
-        #b = [[[30,30]], [[3.41424969e-06, 3.41424969e-06], [3.41424969e-06]]]
+        b = self.function(ec, j_li , e_r , t)
+        #print("b:", b.tolist())
+        #print("b-shape:",b.shape)
         print("--------------")
         
         
         #e= LA.solve(m,b)
         e = linalgSolver.cg(m,b)
-        print("e:", e)
+        print("Ergebnis der Simulation:", e[0])
 
 
 
