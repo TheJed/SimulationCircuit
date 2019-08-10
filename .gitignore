@@ -1,12 +1,13 @@
 draw1.py
 ergebnis.png
-netlistHandler2.py
 sol.sol
-solver Backup 0906.py
-test.py
-test - Kopie.py
-testImagesAsNodes.py
+netlistHandler2.py
 testMatplot.py
-your_file.txt
+solver Backup 0906.py
+test - Kopie.py
+test.py
+testImagesAsNodes.py
 __pycache__/
 venv/
+.gitignore
+your_file.txt
