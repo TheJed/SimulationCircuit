@@ -593,7 +593,7 @@ class Window(QtGui.QApplication):
         
         print(self.potenzialDropDownTo.itemText(self.potenzialDropDownTo.currentIndex()))
         print(self.potenzialDropDownTo.currentIndex())
-        elabel = self.controler.addComponent(component, direction, name, self.potenzialDropDownFrom.currentIndex(), self.potenzialDropDownTo.currentIndex())
+        elabel = self.controler.addComponent(component, direction, name, self.potenzialDropDownFrom.currentIndex(), self.potenzialDropDownTo.currentIndex(), self.componentValueInput.text())
 
 
         if len(elabel) > 0:

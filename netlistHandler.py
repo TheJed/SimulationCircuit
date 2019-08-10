@@ -80,8 +80,8 @@ class NetListHandler:
             for item in self.fileLines:
                 f.write("%s\n" % item) 
     
-    def addLineToNetlist(self, name, eFromIndex, eToIndex):
-        self.fileLines.append("#" + str(name) + "-" + str(eFromIndex) + "-" + str(eToIndex) + "-20")
+    def addLineToNetlist(self, name, eFromIndex, eToIndex, value):
+        self.fileLines.append("#" + str(name) + "-" + str(eFromIndex) + "-" + str(eToIndex) + "-" + str(value))
 
     def addPotencialLineToNetList(self, name, value):
         self.fileLines.append("#" + str(name) + "-" + str(value))

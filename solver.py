@@ -15,8 +15,7 @@ class Solver:
         self.schaltung = schaltung
         self.potencialList = schaltung.potencialList
         print("potenzialliste:", self.potencialList)
-        input()
-        e = [1.1,2,3.3,4]
+        #e = [1.1,2,3.3,4]
         self.jl = 0
         #TODO funktionert nicht, weil überbestimmtes System
         #self.startwertEntkopplung(e)
@@ -163,7 +162,7 @@ class Solver:
         qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
 
         functionPart_2 = np.dot(functionPart_2, qliJl_i)
-        e = self.i_r(t)
+        #e = self.i_r(t)
 
         return np.add(np.add(funktionPart_1,functionPart_2),self.i_r(t))
 
@@ -239,8 +238,10 @@ class Solver:
         function2 = -self.function2(ec, jl_i, e_r, t)
         
         if not function1.tolist():
+            
             return function2
         elif not function2.tolist():
+            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
             return function1
         function = np.array([function1, function2])
         #function = function.transpose()
@@ -537,17 +538,18 @@ class Solver:
 
     def cgSolve(self):
 
-        A = np.array([[4,1],[1,3]])
-        #b = np.array([1,2])
-        b = self.newton()
-        #x_0 = np.array([2,1])
-        e = linalgSolver.cg(A,b)
-        print(e)
+        m = self.matrix(ec, j_li, t)
+        print("M:", m.tolist())
+        e_r = self.newton(t)
+        b = self.function(ec, j_li , e_r , t)
+        e = linalgSolver.cg(m,b)
+        print("Ergebnis der Simulation:", e[0])
 
-    def newton(self):
+    def newton(self,t):
         
-    
-        return [2,optimize.newton(lambda x: x+2, 5, fprime = lambda x: 1, tol=1e-10, maxiter=50000)]
+        f = lambda y: self.g_xyt(x,y,t)
+        self.e_r = optimize.newton(f, self.e_r,tol=1e-10, maxiter=50000)
+        return self.e_r
         
 
     def tesT(self):

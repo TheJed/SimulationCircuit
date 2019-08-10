@@ -11,7 +11,7 @@ class Controler:
         self.circuitDrawing = draw.CircuitDrawing()
         self.circuitDrawing.draw()
 
-    def addComponent(self, component, direction, name, eFromIndex, eToIndex):
+    def addComponent(self, component, direction, name, eFromIndex, eToIndex, value):
         elabel = self.circuitDrawing.addComponent(component, direction, name, eFromIndex, eToIndex)
 
         sign = "?"
@@ -47,7 +47,7 @@ class Controler:
 
 
 
-        self.netHandler.addLineToNetlist(nameForFile, eFromIndex, eToIndex)
+        self.netHandler.addLineToNetlist(nameForFile, eFromIndex, eToIndex, value)
         return elabel
 
     def addPotencialValue(self, name, value):
@@ -63,7 +63,7 @@ class Controler:
     def writeNetList(self):
         #TODO Startobjekt festlegen
         if not ("#" + str("I1") in self.netHandler.fileLines):
-            self.netHandler.addLineToNetlist("I1", self.circuitDrawing.potenzialNummer, 0)
+            self.netHandler.addLineToNetlist("I1", self.circuitDrawing.potenzialNummer, 0, 0.0)
         self.netHandler.writeFile("Schaltung.txt", self.circuitDrawing.potenzialNummer)
 
     def simulate(self):
