@@ -83,6 +83,8 @@ class NetListHandler:
     def addLineToNetlist(self, name, eFromIndex, eToIndex):
         self.fileLines.append("#" + str(name) + "-" + str(eFromIndex) + "-" + str(eToIndex) + "-20")
 
+    def addPotencialLineToNetList(self, name, value):
+        self.fileLines.append("#" + str(name) + "-" + str(value))
     
 class Schaltung:
     def __init__(self, input_data):
@@ -92,6 +94,7 @@ class Schaltung:
         self.spulen = []
         self.vs = []
         self.erzeuger = []
+        self.potencialList = []
 
         self.inzidenz_c = [[]]
         self.inzidenz_g = [[]]
@@ -103,25 +106,33 @@ class Schaltung:
         maxPotenzialNr = 0
         for element in input_data:
             print(element)
-            name, fluss_in, fluss_out, value = element.split("-")
+            
             #Widerstand
             if element[0] == "G":
+                name, fluss_in, fluss_out, value = element.split("-")
                 temp_widerstand = Widerstand(name, int(fluss_in), int(fluss_out), value)
                 self.widerstaende.append(temp_widerstand)
 
             elif element[0] == "C":
+                name, fluss_in, fluss_out, value = element.split("-")
                 temp_transitor = Transistor(name, int(fluss_in), int(fluss_out), value)
                 self.transitoren.append(temp_transitor)
 
             elif element[0] == "L":
+                name, fluss_in, fluss_out, value = element.split("-")
                 temp_Spule = Spule(name, int(fluss_in), int(fluss_out), value)
                 self.spulen.append(temp_Spule)
             elif element[0] == "V":
+                name, fluss_in, fluss_out, value = element.split("-")
                 temp_vs = V(name, int(fluss_in), int(fluss_out), value)
                 self.vs.append(temp_vs)
-            else:
+            elif element[0] == "I":
+                name, fluss_in, fluss_out, value = element.split("-")
                 temp_erzeuger = Erzeuger(name, int(fluss_in), int(fluss_out), value)
                 self.erzeuger.append(temp_erzeuger)
+            else:
+                name, value = element.split("-")
+                self.potencialList.append(value)
 
             if int(fluss_in) > maxPotenzialNr:
                 maxPotenzialNr = int(fluss_in)

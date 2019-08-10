@@ -13,6 +13,9 @@ class Solver:
 
     def __init__(self, schaltung):
         self.schaltung = schaltung
+        self.potencialList = schaltung.potencialList
+        print("potenzialliste:", self.potencialList)
+        input()
         e = [1.1,2,3.3,4]
         self.jl = 0
         #TODO funktionert nicht, weil überbestimmtes System

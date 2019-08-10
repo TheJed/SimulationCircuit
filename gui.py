@@ -31,7 +31,10 @@ if "win" in sys.platform:
 
 class Window(QtGui.QApplication):
     EXIT_CODE_REBOOT = -666
+    
     def __init__(self, sys_argv):
+        regexp_onlyDoubles = QtCore.QRegExp('^([-+]?\d*\.\d+|\d+)$')
+        self.validator = QtGui.QRegExpValidator(regexp_onlyDoubles)
 
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', '#0F9BA8')
@@ -370,6 +373,7 @@ class Window(QtGui.QApplication):
         self.componentDropwDown.addItem("Kondensator")
         self.componentDropwDown.addItem("Spannungsquelle")
         self.componentDropwDown.addItem("Stromquelle")
+        self.componentDropwDown.currentIndexChanged.connect(self.on_ComponentChanged)
 
         self.potenzialDropDownFrom = QtGui.QComboBox()
         self.potenzialDropDownFrom.addItem("---Ausgangspotenzial---")
@@ -377,7 +381,6 @@ class Window(QtGui.QApplication):
         self.potenzialDropDownFrom.addItem("E0")
         self.potenzialDropDownFrom.setAutoCompletion(True)
         
-
         self.potenzialDropDownTo = QtGui.QComboBox()
         self.potenzialDropDownTo.addItem("---Eingangspotenzial---")
         self.potenzialDropDownTo.addItem("Masse")
@@ -406,11 +409,14 @@ class Window(QtGui.QApplication):
 
         inputComponentLayout3 = QtGui.QHBoxLayout()
 
-        self.componenValueLabel = QtGui.QLabel("Wert des Bauteils")
-        
+        self.componentValueLabel = QtGui.QLabel("Start-Value of Component")
+        self.componentValueLabel.hide()
+
         self.componentValueInput = QtGui.QLineEdit()
         self.componentValueInput.setObjectName("")
-        self.componentValueInput.setText("")
+        self.componentValueInput.setText("0.0")
+        self.componentValueInput.hide()
+        self.componentValueInput.setValidator(self.validator)
         self.componentValueInput.textEdited.connect(self.on_valueInputChanged)
 
         self.componentValueDropDown = QtGui.QComboBox()
@@ -420,7 +426,7 @@ class Window(QtGui.QApplication):
         self.componentValueDropDown.addItem("Funktionsauswahl")
         self.componentValueDropDown.addItem("Dummy-Funktion")
 
-        inputComponentLayout3.addWidget(self.componenValueLabel)
+        inputComponentLayout3.addWidget(self.componentValueLabel)
         inputComponentLayout3.addWidget(self.componentValueInput)
         inputComponentLayout3.addWidget(self.componentValueDropDown)
 
@@ -428,7 +434,7 @@ class Window(QtGui.QApplication):
         #buttonDummy3.setFixedSize(50,50)
         buttonAddComponent.clicked.connect(self.addComponentToCircuit)
         buttonUndo = QtGui.QPushButton('Simulate')
-        buttonUndo.clicked.connect(self.simulate)
+        buttonUndo.clicked.connect(self.enterPotencialValues)
         #buttonUndo.setFixedSize(50,50)
 
         inputLayout.addLayout(inputNameLayout)
@@ -442,7 +448,6 @@ class Window(QtGui.QApplication):
         inputLayout.addWidget(buttonUndo)
 
         inputLayout.setContentsMargins(50,50,50,50)
-        
 
         #----------------------------Main-Layout----------------------------# 
 
@@ -572,6 +577,15 @@ class Window(QtGui.QApplication):
     def on_valueDropDownChanged(self):
         self.componentValueInput.setText("")
 
+    def on_ComponentChanged(self):
+        if self.componentDropwDown.currentText() == "Spule":
+            self.componentValueInput.setText("0.0")
+            self.componentValueInput.show()
+            self.componentValueLabel.show()
+        else:
+            self.componentValueInput.hide()
+            self.componentValueLabel.hide()
+
     def addComponentToCircuit(self):
         component = (str(self.componentDropwDown.currentText()))
         direction = (str(self.directionDropwDown.currentText()))
@@ -589,6 +603,10 @@ class Window(QtGui.QApplication):
 
         self.potenzialDropDownFrom.setCurrentIndex(0)
         self.potenzialDropDownTo.setCurrentIndex(0)
+        self.componentValueInput.setText("0.0")
+        self.componentValueInput.hide()
+        self.componentValueLabel.hide()
+
 
         self.updateGraph()
 
@@ -603,6 +621,11 @@ class Window(QtGui.QApplication):
 
     def simulate(self):
 
+        for x in range(len(self.list_potencialInputs)):
+            self.controler.addPotencialValue("E" + str(x), self.list_potencialInputs[x].text())
+
+
+        self.potenzialParameters.close()
         self.controler.simulate()
         
 
@@ -613,6 +636,53 @@ class Window(QtGui.QApplication):
         qt.setWindowTitle("An Error has occured")
         qt.setText("Noch nicht fertig implementiert")
         qt.exec()
+
+    def enterPotencialValues(self):   
+        #regexp_onlyDoubles = QtCore.QRegExp('^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$')
+        
+        
+        self.potenzialParameters = QtGui.QDialog()
+
+        layout = QtGui.QFormLayout()
+
+        label_infoPotencial = QtGui.QLabel("Please insert start-value (float) for the potencials")
+        self.list_potencialInputs = []
+
+        for potencial in range(len(self.potenzialDropDownFrom)-2):
+            inputPotencialLayout = QtGui.QHBoxLayout()
+
+            potencialValueLabel = QtGui.QLabel("Value of Potencial:" + str(potencial))
+            
+            potencialValueInput = QtGui.QLineEdit()
+            potencialValueInput.setObjectName("")
+            potencialValueInput.setText("0.0")
+            potencialValueInput.setValidator(self.validator)
+            inputPotencialLayout.addWidget(potencialValueLabel)
+            inputPotencialLayout.addWidget(potencialValueInput)
+            layout.addRow(inputPotencialLayout)
+            self.list_potencialInputs.append(potencialValueInput)
+
+        button_startSimulation = QtGui.QPushButton("Start Simulation")
+        button_startSimulation.clicked.connect(self.simulate)
+        layout.addRow(button_startSimulation)
+        #le = QtGui.QLineEdit()
+        #layout.addRow(le)
+        #btn1 = QtGui.QPushButton("get name")
+		
+        #le1 = QtGui.QLineEdit()
+        #layout.addRow(btn1,le1)
+        #btn2 = QtGui.QPushButton("Enter an integer")
+        
+		
+        #le2 = QtGui.QLineEdit()
+        #layout.addRow(btn2,le2)
+        self.potenzialParameters.setLayout(layout)
+        self.potenzialParameters.setWindowTitle("Potencial Values")
+
+
+        self.potenzialParameters.exec()
+        #self.load(True) 
+        print()
 
 
 

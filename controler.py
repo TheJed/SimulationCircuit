@@ -50,6 +50,9 @@ class Controler:
         self.netHandler.addLineToNetlist(nameForFile, eFromIndex, eToIndex)
         return elabel
 
+    def addPotencialValue(self, name, value):
+        self.netHandler.addPotencialLineToNetList(name, value)
+
     def undoAddComponent(self):
         self.netHandler.fileLines.pop()
         return self.circuitDrawing.undo()
