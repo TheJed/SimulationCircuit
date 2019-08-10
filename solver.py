@@ -3,7 +3,7 @@ import createV_W_Matrix
 from sympy import Matrix
 from scipy import optimize
 from scipy.sparse import linalg as linalgSolver
-from scipy.integrate import ode as odSolver
+from scipy.integrate import odeint
 from scipy.sparse.csgraph import minimum_spanning_tree as spanningTree
 from scipy.sparse.csgraph import breadth_first_tree as bfTree
 import numpy.linalg as LA
@@ -143,7 +143,7 @@ class Solver:
         #print("b:", b.tolist())
         #print("b-shape:",b.shape)
         print("--------------")
-        
+        self.solve(ec, j_li)
         
         #e= LA.solve(m,b)
         e = linalgSolver.cg(m,b)
@@ -241,7 +241,6 @@ class Solver:
             
             return function2
         elif not function2.tolist():
-            print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
             return function1
         function = np.array([function1, function2])
         #function = function.transpose()
@@ -529,25 +528,61 @@ class Solver:
         print(pArray)
         return pArray
 
-    def solve(self, function):
+    def solve(self, ec, j_li):
 
-        print(self.v_star(5))
-        input()
-        self.tesT()
-        self.cgSolve()
+        self.e_r = [0,0]
+        print("ec:", ec)
+        x = [np.array(ec), j_li]
+        t = np.arange(0, 20, 0.2)
+        print("x_start:", x)
+        print("T:", t)
+        #input()
+        t0 = 0
+        function = lambda x, t: self.cgSolve(x,t)
+        y = odeint(self.cgSolve, x, t)
 
-    def cgSolve(self):
+        """t = np.arange(0, 100000, 0.1)
+        y0 = [7.e6, 0., 0., 0., 1.e3, 0.]
+        y = odeint(self.dr_dt, y0, t)"""
+        print(y)
+       
+    def dr_dt(self,y, t):
+        """Integration of the governing vector differential equation.
+        d2r_dt2 = -(mu/R^3)*r with d2r_dt2 and r as vecotrs.
+        Initial position and velocity are given.
+        y[0:2] = position components
+        y[3:] = velocity components"""
+    
+        G = 6.672*(10**-11)
+        M = 5.972*(10**24)
+        mu = G*M
+        r = np.sqrt(y[0]**2 + y[1]**2 + y[2]**2)
+    
+        dy0 = y[3]
+        dy1 = y[4]
+        dy2 = y[5]
+        dy3 = -(mu / (r**3)) * y[0]
+        dy4 = -(mu / (r**3)) * y[1]
+        dy5 = -(mu / (r**3)) * y[2]
+        return [dy0, dy1, dy2, dy3, dy4, dy5]
 
+    def cgSolve(self, x, t):
+
+        print("x:", x)
+        ec = x[0]
+        j_li = x[1]
         m = self.matrix(ec, j_li, t)
         print("M:", m.tolist())
-        e_r = self.newton(t)
+        e_r = self.newton(ec, t)
         b = self.function(ec, j_li , e_r , t)
         e = linalgSolver.cg(m,b)
         print("Ergebnis der Simulation:", e[0])
+        #TODO hier fix für zweiten Parameter, wenn einer leer ist
+        return [e[0], 0]
 
-    def newton(self,t):
+    def newton(self,ec, t):
         
-        f = lambda y: self.g_xyt(x,y,t)
+        f = lambda e_r: self.g_xyt(ec,e_r,t)
         self.e_r = optimize.newton(f, self.e_r,tol=1e-10, maxiter=50000)
         return self.e_r
         
