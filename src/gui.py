@@ -10,19 +10,22 @@ from matplotlib.figure import Figure
 import PyQt4.QtCore as QtCore
 import pyqtgraph as pg
 import math
+import inspect 
+import random
 
 import SchemDraw as schem
 import SchemDraw.elements as e
+
 import timedPopupMessage as timedMessage
-
-
 import netlistHandler as netHandler
-
 import controler as controler
 import solver as solv
+import functionLib
 
 
-import random
+"""TODO  Einbauen listen Aller Funktionen
+import inspect 
+all_functions = inspect.getmembers(module, inspect.isfunction)"""
 
 if "win" in sys.platform:
     import ctypes
@@ -33,6 +36,10 @@ class Window(QtGui.QApplication):
     EXIT_CODE_REBOOT = -666
     
     def __init__(self, sys_argv):
+        """all_functions = inspect.getmembers(functionLib, inspect.isfunction)
+        
+        print(all_functions)
+        input()"""
         regexp_onlyDoubles = QtCore.QRegExp('^([-+]?\d*\.\d+|\d+)$')
         self.validator = QtGui.QRegExpValidator(regexp_onlyDoubles)
 
@@ -55,118 +62,156 @@ class Window(QtGui.QApplication):
 
         #----------------------------Init Applikation----------------------------# 
 
-        css = """
-
+        cssFile = "../resources/css-gui.txt"
+        css = ""
+        with open(cssFile,"r") as fh:
+            css += (fh.read())
 
        
-        QMessageBox QLabel {
-            color: #0F9BA8;
-            background-color:white;
-            font-weight: bold;
-            font-size: 15px;
-        }
-        
-
-        QWidget#containerMain {
-            background-color:#f9f9f9;
-        }
-
-        QWidget#containerInput  {
-            background-color:#0F9BA8;
-            border-radius: 30px;
-        }
-
-        QWidget#containerCircuit  {
-            border: 3px solid grey;
-            border-radius: 30px;
-        }
-
-        QWidget#containerGraph 
-        {
-            background-color:white;
-        }
-                
-        QScrollArea#scrollGraph {
-            background-color:white;
-        }
-
-        QScrollArea#scrollCircuit {
-            background-color:white;
-        }
-
-        QPushButton:hover{
-            background-color: #ff9933;
-            border:5px solid #ff9933;
-            color: white;
-        }
-
-        QPushButton {
-            border:5px solid #f5f5f0;
-            border-radius: 10px;
-            background-color:#f5f5f0;
-        }
-
-        QLabel{
-            padding-left: 5px;
-            padding-right: 5px;
-            background-color: #c9c9c9;
-        
-        }
-
-        QComboBox {
-            border: 5px solid #f5f5f0;
-            border-radius: 10px;
-            background-color: #f5f5f0;
-        }
-
-        QComboBox:hover{
-            background-color: #ff9933;
-            border:5px solid #ff9933;
-            color: white;
-        }               
-
-        QComboBox:on{
-            
-            border: 5px solid grey;
-            border-radius: 10px;
-        }
-
-        QListView{
-            color:              black;
-            background-color:   rgb(255, 255, 255);
-            font-weight:        bold;
-            selection-background-color: rgb(47, 175, 178);
-            show-decoration-selected: 1;  
-        }
-
-        QWidget#containerGraph {
-            border: 3px solid grey;
-            border-radius: 10px;
-        }
-
-        QLabel#imageCircuit {
-            background-color:#f9f9f9; 
-            border: 0px;
-        }
-
-        QScrollArea#scrollCircuit {
-            border:0px;
-        }
-
-        
-
-        """ 
-        
         screen_resolution = self.desktop().screenGeometry()
         width, height = screen_resolution.width(), screen_resolution.height()
-
-        
 
 
         self.main_window = QtGui.QMainWindow()
         self.main_window.setWindowTitle('ECS - Electronical Circuit Simulator')
         self.main_window.showMaximized()
 
+        #Set Icon
+        self.setAppIcon()
+
+        # set the layout
+        containerMain = QtGui.QWidget()
+        containerMain.setObjectName("containerMain")
+       
+        
+        containerMain.setStyleSheet(css)
+        self.main_window.setStyleSheet(css)
+        mainLayout = QtGui.QVBoxLayout(containerMain)
+        
+
+
+        containerGraph = QtGui.QWidget()
+        containerGraph.setObjectName("containerGraph")
+        containerGraph.setFixedWidth(width * 0.965)
+        
+        graphLayout = QtGui.QVBoxLayout(containerGraph)
+
+        
+        containerCircuit = QtGui.QWidget()
+
+        containerCircuit.setObjectName("containerCircuit")
+        containerCircuit.setFixedWidth(width * 0.7)
+        containerCircuit.setFixedHeight(height * 0.45)
+     
+        circuitLayout = QtGui.QVBoxLayout(containerCircuit)
+
+        containerInput = QtGui.QWidget()
+        containerInput.setObjectName("containerInput")
+        
+        containerInput.setFixedWidth(width * 0.25)
+        containerInput.setFixedHeight(height * 0.45)
+        inputLayout = QtGui.QVBoxLayout(containerInput)
+
+        containerUpperLayout = QtGui.QWidget()
+        upperLayout = QtGui.QHBoxLayout(containerUpperLayout)
+
+        containerLowerLayout = QtGui.QWidget()
+        lowerLayout = QtGui.QHBoxLayout(containerLowerLayout)
+        
+
+        #----------------------------Main-Menue------------------------------#
+
+        self.setMenu()
+
+        #----------------------------Graph-Layout----------------------------#
+        #Layout für die Anzeige des Graphen
+
+        # a figure instance to plot on
+        self.creatPlotFigure()
+        #graphLayout.addWidget(self.canvas)
+        graphLayout.addWidget(self.buttonPlotPotenzial)
+        graphLayout.addWidget(self.pgGraph)
+
+
+        #----------------------------Circuit-Layout----------------------------#
+
+        self.createCircuitFigure()
+        circuitLayout.setContentsMargins(20,20,20,20)
+        circuitLayout.addWidget(self.scrollArea)
+
+
+        #----------------------------Input-Layout----------------------------#
+
+        inputNameLayout = QtGui.QHBoxLayout()
+
+        self.createDropDowns()
+
+        self.componentNameInputLabel = QtGui.QLabel("Name des Bauteils")
+
+        self.componentNameInput = QtGui.QLineEdit()
+        self.componentNameInput.setObjectName("")
+        self.componentNameInput.setText("")
+
+        inputNameLayout.addWidget(self.componentNameInputLabel)
+        inputNameLayout.addWidget(self.componentNameInput)
+
+        inputComponentLayout = QtGui.QHBoxLayout()
+        inputComponentLayout.addWidget(self.componentDropwDown)
+        inputComponentLayout.addWidget(self.potenzialDropDownFrom)
+        inputComponentLayout.addWidget(self.potenzialDropDownTo)
+
+
+        inputComponentLayout2 = QtGui.QHBoxLayout()
+
+        self.directionLabel = QtGui.QLabel("Richtung")
+        inputComponentLayout2.addWidget(self.directionLabel)
+        inputComponentLayout2.addWidget(self.directionDropwDown)
+
+
+        inputComponentLayout3 = QtGui.QHBoxLayout()
+
+        self.componentValueLabel = QtGui.QLabel("Start-Value of Component")
+        self.componentValueLabel.hide()
+        self.componentValueInput = QtGui.QLineEdit()
+        self.componentValueInput.setObjectName("")
+        self.componentValueInput.setText("0.0")
+        self.componentValueInput.hide()
+        self.componentValueInput.setValidator(self.validator)
+        self.componentValueInput.textEdited.connect(self.on_valueInputChanged)
+
+        inputComponentLayout3.addWidget(self.componentValueLabel)
+        inputComponentLayout3.addWidget(self.componentValueInput)
+        inputComponentLayout3.addWidget(self.componentFunctionDropDown)
+
+        buttonAddComponent = QtGui.QPushButton('Add Component')
+        buttonAddComponent.clicked.connect(self.addComponentToCircuit)
+        buttonUndo = QtGui.QPushButton('Simulate')
+        buttonUndo.clicked.connect(self.enterPotencialValues)
+
+        inputLayout.addLayout(inputNameLayout)
+        inputLayout.addLayout(inputComponentLayout)
+        inputLayout.addLayout(inputComponentLayout2)
+        inputLayout.addLayout(inputComponentLayout3)
+
+        inputLayout.addWidget(buttonAddComponent)
+        inputLayout.addWidget(buttonUndo)
+
+        inputLayout.setContentsMargins(50,50,50,50)
+
+        #----------------------------Main-Layout----------------------------# 
+
+        upperLayout.addWidget(containerInput)
+        upperLayout.addWidget(containerCircuit)
+        
+        lowerLayout.addWidget(containerGraph)
+
+        mainLayout.addWidget(containerUpperLayout)
+        mainLayout.addWidget(containerLowerLayout)       
+
+        self.main_window.setCentralWidget(containerMain)
+
+
+    def setAppIcon(self):
         app_icon = QtGui.QIcon()
         app_icon.addFile("../resources/favicon.ico")
         app_icon.addFile('../resources/favicon.ico', QtCore.QSize(16,16))
@@ -177,59 +222,7 @@ class Window(QtGui.QApplication):
         self.setWindowIcon(QtGui.QIcon("../resources/favicon.ico"))
         self.main_window.setWindowIcon(app_icon)
 
-
-        # set the layout
-        containerMain = QtGui.QWidget()
-        containerMain.setObjectName("containerMain")
-        #containerMain.setStyleSheet("background-color:white;")
-        
-        #containerMain.setStyleSheet("QWidget#containerMain {background-color:#e0e0e0;}")
-        containerMain.setStyleSheet(css)
-        self.main_window.setStyleSheet(css)
-        mainLayout = QtGui.QVBoxLayout(containerMain)
-        
-
-
-        containerGraph = QtGui.QWidget()
-        #containerGraph.setStyleSheet("background-color:white ;")
-        containerGraph.setObjectName("containerGraph")
-        #containerMain.setStyleSheet("background-color:white;")
-        containerGraph.setFixedWidth(width * 0.965)
-        
-        #containerGraph.setStyleSheet("QWidget#containerGraph {background-color:white;}")
-        graphLayout = QtGui.QVBoxLayout(containerGraph)
-
-        
-        containerCircuit = QtGui.QWidget()
-        #containerCircuit.setStyleSheet("background-color:SlateGrey ;")
-        #width = int(self.width() * 4)
-        #height = int(self.height() * 4)
-        containerCircuit.setObjectName("containerCircuit")
-        containerCircuit.setFixedWidth(width * 0.7)
-        containerCircuit.setFixedHeight(height * 0.45)
-     
-        circuitLayout = QtGui.QVBoxLayout(containerCircuit)
-
-        containerInput = QtGui.QWidget()
-        #containerInput.setStyleSheet("background-color:white; border-radius:  3px 3px 6px;padding: 0px;")
-        #containerInput.setStyleSheet("QWidget#containerInput {background-color:#0F9BA8 ;border-radius: 30px;}")
-        containerInput.setObjectName("containerInput")
-        
-        containerInput.setFixedWidth(width * 0.25)
-        containerInput.setFixedHeight(height * 0.45)
-        inputLayout = QtGui.QVBoxLayout(containerInput)
-
-        containerUpperLayout = QtGui.QWidget()
-        #containerUpperLayout.setStyleSheet("background-color:white;")
-        upperLayout = QtGui.QHBoxLayout(containerUpperLayout)
-
-        containerLowerLayout = QtGui.QWidget()
-        #containerLowerLayout.setStyleSheet("background-color:#e0e0e0 ;")
-        lowerLayout = QtGui.QHBoxLayout(containerLowerLayout)
-        
-
-        #----------------------------Main-Menue------------------------------#
-
+    def setMenu(self):
         self.statusbar = self.main_window.statusBar()
     
 
@@ -272,16 +265,11 @@ class Window(QtGui.QApplication):
         mainMenu.setObjectName("mainMenu")
         mainMenu.setStyleSheet("#mainMenu{padding: 3px; border-bottom: 2px solid #0F9BA8; background-color:white}")
         
-        #----------------------------Graph-Layout----------------------------#
-        #Layout für die Anzeige des Graphen
+    def creatPlotFigure(self):
 
-        # a figure instance to plot on
         self.figure = Figure()
         self.figure.gca()
-        #self.figure.set_size_inches(5,5)
 
-        # this is the Canvas Widget that displays the `figure`
-        # it takes the `figure` instance as a parameter to __init__
         self.canvas = FigureCanvas(self.figure)
                
         self.pgGraph = pg.PlotWidget()
@@ -301,25 +289,7 @@ class Window(QtGui.QApplication):
         self.buttonPlotPotenzial.clicked.connect(self.plot2)
         self.buttonPlotPotenzial.setFixedSize(100,20)
 
-        #graphLayout.addWidget(self.canvas)
-        graphLayout.addWidget(self.buttonPlotPotenzial)
-        graphLayout.addWidget(self.pgGraph)
-
-
-        #----------------------------Circuit-Layout----------------------------#
-
-        
-        #self.circuitDrawing = Draw.CircuitDrawing()
-        #self.circuitDrawing.draw()
-        
-
-        #with open('test.pkl', 'rb') as input:
-        #    self.circuitDrawing = pickle.load(input)
-
-        
-            
-
-        
+    def createCircuitFigure(self):
 
         self.circuitFigure = Figure()
         self.circuitCanvas = FigureCanvas(self.circuitFigure)
@@ -334,38 +304,13 @@ class Window(QtGui.QApplication):
         #image.show()
         
         #self.updateGraph()
-        
+    
         self.scrollArea = QtGui.QScrollArea()
         self.scrollArea.setWidget(self.image)
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollCircuit")
-        
 
-
-        #buttonDummy1 = QtGui.QPushButton('Add Element to Circuit')
-        #buttonDummy2 = QtGui.QPushButton('Button')
-        #buttonDummy1.clicked.connect(self.drawC)
-
-        circuitLayout.setContentsMargins(20,20,20,20)
-        circuitLayout.addWidget(self.scrollArea)
-        #circuitLayout.addWidget(self.image)
-        #circuitLayout.addWidget(buttonDummy1)
-        #circuitLayout.addWidget(buttonDummy2)
-
-        #----------------------------Input-Layout----------------------------#
-
-        inputNameLayout = QtGui.QHBoxLayout()
-
-        self.componentNameInputLabel = QtGui.QLabel("Name des Bauteils")
-        
-        self.componentNameInput = QtGui.QLineEdit()
-        self.componentNameInput.setObjectName("")
-        self.componentNameInput.setText("")
-
-        inputNameLayout.addWidget(self.componentNameInputLabel)
-        inputNameLayout.addWidget(self.componentNameInput)
-
-        inputComponentLayout = QtGui.QHBoxLayout()
+    def createDropDowns(self):
 
         self.componentDropwDown = QtGui.QComboBox()
         self.componentDropwDown.addItem("Widerstand")
@@ -385,17 +330,6 @@ class Window(QtGui.QApplication):
         self.potenzialDropDownTo.addItem("---Eingangspotenzial---")
         self.potenzialDropDownTo.addItem("Masse")
         self.potenzialDropDownTo.addItem("E0")
-        
-        
-        inputComponentLayout.addWidget(self.componentDropwDown)
-        inputComponentLayout.addWidget(self.potenzialDropDownFrom)
-        inputComponentLayout.addWidget(self.potenzialDropDownTo)
-
-
-        inputComponentLayout2 = QtGui.QHBoxLayout()
-
-
-        self.directionLabel = QtGui.QLabel("Richtung")
 
         self.directionDropwDown = QtGui.QComboBox()
         self.directionDropwDown.addItem("left")
@@ -403,69 +337,10 @@ class Window(QtGui.QApplication):
         self.directionDropwDown.addItem("up")
         self.directionDropwDown.addItem("down")
 
-        inputComponentLayout2.addWidget(self.directionLabel)
-        inputComponentLayout2.addWidget(self.directionDropwDown)
-
-
-        inputComponentLayout3 = QtGui.QHBoxLayout()
-
-        self.componentValueLabel = QtGui.QLabel("Start-Value of Component")
-        self.componentValueLabel.hide()
-
-        self.componentValueInput = QtGui.QLineEdit()
-        self.componentValueInput.setObjectName("")
-        self.componentValueInput.setText("0.0")
-        self.componentValueInput.hide()
-        self.componentValueInput.setValidator(self.validator)
-        self.componentValueInput.textEdited.connect(self.on_valueInputChanged)
-
-        self.componentValueDropDown = QtGui.QComboBox()
-        
-        self.componentValueDropDown.currentIndexChanged.connect(self.on_valueDropDownChanged)
-        
-        self.componentValueDropDown.addItem("Funktionsauswahl")
-        self.componentValueDropDown.addItem("Dummy-Funktion")
-
-        inputComponentLayout3.addWidget(self.componentValueLabel)
-        inputComponentLayout3.addWidget(self.componentValueInput)
-        inputComponentLayout3.addWidget(self.componentValueDropDown)
-
-        buttonAddComponent = QtGui.QPushButton('Add Component')
-        #buttonDummy3.setFixedSize(50,50)
-        buttonAddComponent.clicked.connect(self.addComponentToCircuit)
-        buttonUndo = QtGui.QPushButton('Simulate')
-        buttonUndo.clicked.connect(self.enterPotencialValues)
-        #buttonUndo.setFixedSize(50,50)
-
-        inputLayout.addLayout(inputNameLayout)
-        inputLayout.addLayout(inputComponentLayout)
-        inputLayout.addLayout(inputComponentLayout2)
-        inputLayout.addLayout(inputComponentLayout3)
-        #inputLayout.addWidget(self.componentNameInput)
-        #inputLayout.addWidget(self.componentDropwDown)
-        #inputLayout.addWidget(self.directionDropwDown)
-        inputLayout.addWidget(buttonAddComponent)
-        inputLayout.addWidget(buttonUndo)
-
-        inputLayout.setContentsMargins(50,50,50,50)
-
-        #----------------------------Main-Layout----------------------------# 
-
-        upperLayout.addWidget(containerInput)
-        upperLayout.addWidget(containerCircuit)
-        
-        
-
-        lowerLayout.addWidget(containerGraph)
-
-        mainLayout.addWidget(containerUpperLayout)
-        mainLayout.addWidget(containerLowerLayout)       
-
-        self.main_window.setCentralWidget(containerMain)
-        #self.setLayout(mainLayout)
-        #self.setGeometry(50, 50, 1000, 700)
-        
-        #self.setWindowTitle('Rhein-Simulator')
+        self.componentFunctionDropDown = QtGui.QComboBox()
+        self.componentFunctionDropDown.currentIndexChanged.connect(self.on_valueDropDownChanged)
+        self.componentFunctionDropDown.addItem("Funktionsauswahl")
+        self.componentFunctionDropDown.addItem("Dummy-Funktion")
 
     def createNewCircuit(self):
         
@@ -516,9 +391,7 @@ class Window(QtGui.QApplication):
         #message.setWindowTitle("MessageBox demo")
         #message.setDetailedText("The details are as follows:")
         #message.setStandardButtons(QtGui.QMessageBox.Ok)
-
-        
-
+ 
     def load(self, isNew=False):
 
 
@@ -563,7 +436,6 @@ class Window(QtGui.QApplication):
 
         haveToRemove = self.controler.undoAddComponent()
         
-
         if haveToRemove:
 
             self.potenzialDropDownFrom.removeItem(self.potenzialDropDownFrom.count()-1)
@@ -571,7 +443,6 @@ class Window(QtGui.QApplication):
 
         self.updateGraph()
     
-
     def on_valueInputChanged(self):
         self.componentValueDropDown.setCurrentIndex(0)
 
@@ -610,11 +481,7 @@ class Window(QtGui.QApplication):
 
 
         self.updateGraph()
-
-        
-
-        
-
+  
     def updateGraph(self):
         
         self.pixmap = QtGui.QPixmap("../resources/ergebnis.png")
@@ -684,28 +551,7 @@ class Window(QtGui.QApplication):
         self.potenzialParameters.exec()
         #self.load(True) 
         print()
-
-
-    def plot(self):
-
-        ''' plot some random stuff '''
-        # random data
-        data = [random.random() for i in range(10)]
-
-        # create an axis
-        ax = self.figure.axes[0]
-        
-        # discards the old graph
-        ax.clear()
-        
-
-        # plot data
-        ax.plot(data, '*-')
-        # refresh canvas
-        #self.figure.set_figheight(self.figure.get_figheight()*1.25)
-        self.canvas.draw()
-     
-        
+ 
     def plot2(self):
         data = self.controler.getSolutionData()
         x = data[:,0]
@@ -717,7 +563,6 @@ class Window(QtGui.QApplication):
         
         plotItem.plot(y, x, pen = pg.mkPen('#0F9BA8', width=3, style=QtCore.Qt.SolidLine) )
         
-
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
