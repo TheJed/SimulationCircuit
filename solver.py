@@ -90,6 +90,9 @@ class Solver:
         print("ai_vc:", self.ai_vc)
 
 
+        self.ai_v = np.dot(self.q_v.transpose(), (self.inzidenz_i))
+        print("ai_v;", self.ai_v)
+
     def simulate(self):
 
         self.createInzidenzMatrices()
@@ -285,6 +288,10 @@ class Solver:
         ergebnis = linalgSolver.cg(matrixA,self.v_t(t))
         return ergebnis   
 
+    def v_t(self, t):
+        #TODO implementieren
+        return t
+
     def i_star(self, t):
         #TODO
 
@@ -297,7 +304,10 @@ class Solver:
    
     def i_c(self, t):
          #TODO fertig implementieren. VL wird berechnet aus anderen sachen !!!!
-        return [t]
+        summand1 = self.p_c.transpose.dot(self.ai_v).dot(self.i_s(t))
+        summand2 = self.p_c.transpose.dot(self.al_v).dot(self.v_matrix).dot(self.i_star(t))
+        function = np.add(summand1, summand2)
+        return function
 
     def i_s(self,t):
         #TODO
@@ -317,6 +327,23 @@ class Solver:
         #TODO fertig implementieren. VL wird berechnet aus anderen sachen !!!!
         ergebnis = -self.w_matrix.transpose().dot(self.inzidenz_l.transpose()).dot(self.p_v).dot(self.v_star(t))
         return ergebnis
+
+    def e_l(self, e_c, e_r, t):
+
+        tempMatrix = self.v_matrix.transpose().dot(self.al_vcr.transpose())
+        tempMatrix = LA.inv(tempMatrix)
+
+        
+        minuend1 = tempMatrix.dot(self.v_matrix.transpose()).dot(self.ableitung_l_nacht(self.w_matrix, t))
+        minuend2 = self.al_v.transpose().dot(self.p_c).dot(e_c)
+        minuend3 = self.al_vc.transpose().dot(self.p_r).dot(e_r)
+        minuend4 = self.inzidenz_l.transpose().dot(self.p_v).dot(self.v_star(t))
+
+        e_l = np.substract(minuend1, minuend2)
+        e_l = np.substract(e_l, minuend3)
+        e_l = np.substract(e_l, minuend4)
+
+        return e_l
 
     #TODO ungeklärt
     def startwertEntkopplung(self, e):
@@ -384,9 +411,6 @@ class Solver:
             #print("True")
             return True
 
-    def removeComponent(self,componentName):
-        self.simulate()
-        input()
 
     def findeZusammenhangskomponente(self, inzidenzMatrix):
 
