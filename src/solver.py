@@ -16,6 +16,7 @@ class Solver:
         self.potencialList = schaltung.potencialList
         print("potenzialliste:", self.potencialList)
         self.jl = 0
+        self.solution = []
         #TODO funktionert nicht, weil überbestimmtes System
         #self.startwertEntkopplung(e)
 
@@ -30,68 +31,55 @@ class Solver:
         self.g_r = self.schaltung.getGr()
         self.v_t = self.schaltung.getV_t()
 
+        
         #Vs löschen
-        self.c_v = self.findeZusammenhangskomponente(self.schaltung.inzidenz_v)
-
+        self.c_v = self.findeZusammenhangskomponente(self.inzidenz_v.transpose())
         self.q_v = self.createQArray(self.c_v, self.isMasse(self.inzidenz_v))
         self.p_v = self.createPArray(self.c_v, self.isMasse(self.inzidenz_v))
 
         #Delete V_sources
-        print(self.inzidenz_c)
-
         self.ac_v = np.dot(self.q_v.transpose(), (self.inzidenz_c))
         print("Ac_v: \n", self.ac_v)
-        
-        #Delete Inductors
-        self.c_c = self.findeZusammenhangskomponente(np.array(self.ac_v).transpose())
-        self.q_c = self.createQArray(self.c_c, self.isMasse(self.ac_v))
-        self.p_c = self.createPArray(self.c_c, self.isMasse(self.ac_v))
-        
-        self.ar_vc = np.dot(np.dot(self.q_c.transpose(), self.q_v.transpose()), self.inzidenz_r)
-        print("Ar_vc: \n", self.ar_vc)
 
-        #Delete Resistors
-        self.c_r = self.findeZusammenhangskomponente(np.array(self.ar_vc).transpose())
-        self.q_r = self.createQArray(self.c_r, self.isMasse(self.ar_vc))
-        self.p_r = self.createPArray(self.c_r, self.isMasse(self.ar_vc))
-        
-        tempMatrix = np.dot(self.q_r.transpose(), self.q_c.transpose())
-        tempMatrix = np.dot(tempMatrix, self.q_v.transpose())     
-        self.al_vcr = np.dot(tempMatrix, self.inzidenz_l)
-        print("Al_vcr: \n", self.al_vcr)
-
-
-        #Berechne Al ohne v, c
-        tempMatrix = np.dot(self.q_c.transpose(), self.q_v.transpose())     
-        self.al_vc = np.dot(tempMatrix, self.inzidenz_l)
-        print("Al_cv: \n", self.al_vc)
-
-        #Berechne al ohne v
- 
         self.al_v = np.dot(self.q_v.transpose(), self.inzidenz_l)
         print("Al_v: \n", self.al_v)
-        
-        
-        tempMatrix = self.q_r.transpose().dot(tempMatrix)
-        self.ai_vcr = np.dot(tempMatrix, self.inzidenz_i)
-        print("Ai_cvr: \n", self.ai_vcr)
-
 
         self.ar_v = np.dot(np.transpose(self.q_v), self.inzidenz_r)
-
-        print("al_vcr:\n:", self.al_vcr)
-        print("ai_vcr:\n", self.ai_vcr)
-
-        self.ail_vcr = np.concatenate((np.array(self.al_vcr),np.array(self.ai_vcr)),axis=1)
-        print("ail_vcr:", self.ail_vcr)
-
-        tempMatrix = np.dot(self.q_c.transpose(), self.q_v.transpose())     
-        self.ai_vc = tempMatrix.dot(self.inzidenz_i)
-        print("ai_vc:", self.ai_vc)
-
+        print("Ar_v: \n", self.ar_v)
 
         self.ai_v = np.dot(self.q_v.transpose(), (self.inzidenz_i))
         print("ai_v;", self.ai_v)
+
+        #Kondesatoren
+        self.c_c = self.findeZusammenhangskomponente(np.array(self.ac_v).transpose())
+        self.q_c = self.createQArray(self.c_c, self.isMasse(self.ac_v))
+        self.p_c = self.createPArray(self.c_c, self.isMasse(self.ac_v))
+
+        #Delete Kondensators    
+        self.al_vc = np.dot(self.q_c.transpose(), self.al_v)
+        print("Al_cv: \n", self.al_vc)
+
+        self.ai_vc = np.dot(self.q_c.transpose(), self.ai_v)
+        print("Ai_vc:", self.ai_vc)
+
+        self.ar_vc = np.dot(self.q_c.transpose(), self.ar_v)
+        print("Ar_vc: \n", self.ar_vc)
+
+        #Resistors
+        self.c_r = self.findeZusammenhangskomponente(np.array(self.ar_vc).transpose())
+        self.q_r = self.createQArray(self.c_r, self.isMasse(self.ar_vc))
+        self.p_r = self.createPArray(self.c_r, self.isMasse(self.ar_vc))
+
+        #Delete Resistances   
+        self.al_vcr = np.dot(self.q_r.transpose(), self.al_vc)
+        print("Al_vcr: \n", self.al_vcr)
+
+        #tempMatrix = self.q_r.transpose().dot(tempMatrix)
+        self.ai_vcr = np.dot(self.q_r.transpose(), self.ai_vc)
+        print("Ai_vcr: \n", self.ai_vcr)
+
+        self.ail_vcr = np.concatenate((np.array(self.al_vcr),np.array(self.ai_vcr)),axis=1)
+        print("ail_vcr:", self.ail_vcr)
 
     def simulate(self):
 
@@ -109,36 +97,17 @@ class Solver:
    
         print("------------Begin Calculation------------------")
 
-    
         #TODO eigentlich Vektor und kein Skalar
         ec = [2]
         e_r = [0,0]
         j_li = 0
         x = ec
         t = 10
-        f = lambda y: self.g_xyt(x,y,t)
-        
-       
 
-
-        
-        e_r = optimize.newton(f, e_r,tol=1e-10, maxiter=50000)
-
-        print("Ergebnis Newton:", e_r)
-    
-        
-        m = self.matrix(ec, j_li, t)
-        print("M:", m.tolist())
-
-
-        b = self.function(ec, j_li , e_r , t)
-        
         self.solve(ec, j_li)
         
-        #e= LA.solve(m,b)
-        #e = linalgSolver.cg(m,b)
-        #print("Ergebnis der Simulation:", e[0])
-
+        #TODO hier die rückentkoppeltenwerte übergbene
+        return np.array(self.solution)
 
     def g_xyt(self, ec,e_r,t):
 
@@ -313,7 +282,6 @@ class Solver:
     def i_s(self,t):
         #TODO
         return [t]
-
     
     def i_r(self,t):
          #TODO fertig implementieren. VL wird berechnet aus anderen sachen !!!!
@@ -329,20 +297,20 @@ class Solver:
         ergebnis = -self.w_matrix.transpose().dot(self.inzidenz_l.transpose()).dot(self.p_v).dot(self.v_star(t))
         return ergebnis
 
+    #TODO mit anderen Solver auf Zeit vergleichen und austauschbar in eine Methode packen
     def e_l(self, e_c, e_r, t):
 
-        tempMatrix = self.v_matrix.transpose().dot(self.al_vcr.transpose())
-        tempMatrix = LA.inv(tempMatrix)
+        m = self.v_matrix.transpose().dot(self.al_vcr.transpose())
+        minuend1 = self.v_matrix.transpose().dot(self.ableitung_l_nacht(self.w_matrix, t))
+        minuend2 = m.dot(self.al_v.transpose()).dot(self.p_c).dot(e_c)
+        minuend3 = m.dot(self.al_vc.transpose()).dot(self.p_r).dot(e_r)
+        minuend4 = m.dot(self.inzidenz_l.transpose()).dot(self.p_v).dot(self.v_star(t))
 
-        
-        minuend1 = tempMatrix.dot(self.v_matrix.transpose()).dot(self.ableitung_l_nacht(self.w_matrix, t))
-        minuend2 = self.al_v.transpose().dot(self.p_c).dot(e_c)
-        minuend3 = self.al_vc.transpose().dot(self.p_r).dot(e_r)
-        minuend4 = self.inzidenz_l.transpose().dot(self.p_v).dot(self.v_star(t))
+        b = np.substract(minuend1, minuend2)
+        b = np.substract(b, minuend3)
+        b = np.substract(b, minuend4)
 
-        e_l = np.substract(minuend1, minuend2)
-        e_l = np.substract(e_l, minuend3)
-        e_l = np.substract(e_l, minuend4)
+        e_l = linalgSolver.cg(m,b)
 
         return e_l
 
@@ -412,14 +380,12 @@ class Solver:
             #print("True")
             return True
 
-
     def findeZusammenhangskomponente(self, inzidenzMatrix):
 
         if not inzidenzMatrix.tolist():
-
             potenzialListe = list(range(self.schaltung.potenzialNumber-1))
         else:
-            potenzialListe = list(range(len(inzidenzMatrix[0])))
+            potenzialListe = list(range(inzidenzMatrix.shape[1]))
         
         zusammenhangskomponenteListe = []
         while len(potenzialListe) > 0:
@@ -529,7 +495,7 @@ class Solver:
         self.e_r = [0,0]
         print("ec:", ec)
         x = [np.array(ec), j_li]
-        t = np.arange(0, 20, 0.2)
+        t = np.arange(0, 10, 1.0)
         print("x_start:", x)
         print("T:", t)
 
@@ -540,21 +506,22 @@ class Solver:
 
     def cgSolve(self, x, t):
 
-        print("x:", x)
+        #print("x:", x)
         ec = x[0]
         j_li = x[1]
         m = self.matrix(ec, j_li, t)
-        print("M:", m.tolist())
+        #print("M:", m.tolist())
         e_r = self.newton(ec, t)
         b = self.function(ec, j_li , e_r , t)
         e = linalgSolver.cg(m,b)
         print("Ergebnis der Simulation:", e[0])
+        self.solution.append([e[0].tolist()[0], t])
         #TODO hier fix für zweiten Parameter, wenn einer leer ist
         return [e[0], 0]
 
     def newton(self,ec, t):
         
         f = lambda e_r: self.g_xyt(ec,e_r,t)
-        self.e_r = optimize.newton(f, self.e_r,tol=1e-10, maxiter=50000)
+        self.e_r = optimize.newton(f, self.e_r,tol=1e-10, maxiter=50000, disp=False)
         return self.e_r
         

@@ -526,7 +526,7 @@ class Window(QtGui.QApplication):
             pathFileName = QtGui.QFileDialog.getOpenFileName(None, 'Load ECS-Project', '../saved-circuits', 'pickle(*.pickle)') 
             
         else: 
-            pathFileName = "Standard.pickle"
+            pathFileName = "../saved-circuits/Standard.pickle"
 
         with open(pathFileName, 'rb') as handle:
                 loadedObjects = pickle.load(handle)
@@ -633,9 +633,9 @@ class Window(QtGui.QApplication):
 
 
         qt = QtGui.QMessageBox()
-        qt.setIcon(QtGui.QMessageBox.Critical)
-        qt.setWindowTitle("An Error has occured")
-        qt.setText("Noch nicht fertig implementiert")
+        qt.setIcon(QtGui.QMessageBox.Information)
+        qt.setWindowTitle("Info")
+        qt.setText("Programm ist fertig durchgelaufen!")
         qt.exec()
 
     def enterPotencialValues(self):   
@@ -686,10 +686,6 @@ class Window(QtGui.QApplication):
         print()
 
 
-
-
-
-
     def plot(self):
 
         ''' plot some random stuff '''
@@ -711,12 +707,15 @@ class Window(QtGui.QApplication):
      
         
     def plot2(self):
+        data = self.controler.getSolutionData()
+        x = data[:,0]
+        y = data[:,1]
         self.pgGraph.restoreState(self.state)
-        data = [random.random() for i in range(10)]
+        #data = [random.random() for i in range(100)]
         plotItem = self.pgGraph.getPlotItem()
         plotItem.clear()
         
-        plotItem.plot(data, pen = pg.mkPen('#0F9BA8', width=3, style=QtCore.Qt.SolidLine) )
+        plotItem.plot(y, x, pen = pg.mkPen('#0F9BA8', width=3, style=QtCore.Qt.SolidLine) )
         
 
 if __name__ == '__main__':

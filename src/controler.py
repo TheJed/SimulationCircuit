@@ -10,6 +10,7 @@ class Controler:
         self.netHandler = nt.NetListHandler()
         self.circuitDrawing = draw.CircuitDrawing()
         self.circuitDrawing.draw()
+        self.solutionData = []
 
     def addComponent(self, component, direction, name, eFromIndex, eToIndex, value):
         elabel = self.circuitDrawing.addComponent(component, direction, name, eFromIndex, eToIndex)
@@ -77,7 +78,11 @@ class Controler:
 
 
         solver = solv.Solver(schaltung)
-        solver.simulate()
+        self.solutionData = solver.simulate()
+
+    def getSolutionData(self):
+        return self.solutionData
+
     
         
 
