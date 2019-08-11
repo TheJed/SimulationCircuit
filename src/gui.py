@@ -617,7 +617,7 @@ class Window(QtGui.QApplication):
 
     def updateGraph(self):
         
-        self.pixmap = QtGui.QPixmap("ergebnis.png")
+        self.pixmap = QtGui.QPixmap("../resources/ergebnis.png")
         self.image.setPixmap(self.pixmap)
 
     def simulate(self):

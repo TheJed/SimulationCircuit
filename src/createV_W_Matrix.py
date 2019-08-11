@@ -5,7 +5,8 @@ import collections
 
 
 print("############################### Begin V W Matrix Berechnung ###############################")
-u_matrix = np.array([[1,  -1, 1, 0, 0, 0], [-1, 1, 0, 0, -1, -1], [0, 0, -1, 1, 0, 1]])
+#u_matrix = np.array([[1,  -1, 1, 0, 0, 0], [-1, 1, 0, 0, -1, -1], [0, 0, -1, 1, 0, 1]])
+u_matrix = np.array([[-1., 1.]])
 #u_matrix = np.array([[-1,  1]])
 
 def erstelleSpannbaum(matrix):
@@ -22,8 +23,8 @@ def erstelleSpannbaum(matrix):
                 liste.append(row)
                 x += 1
         
-        if x == 1:
-            liste.append(len(matrix))
+        #if x == 1:
+        #    liste.append(len(matrix))
 
         neuesBauteil = False
         for x in liste:
@@ -45,11 +46,12 @@ def erstelleSpannbaum(matrix):
 def tiefensuche(u_matrix):
 
     #Zeile für Masseknoten hinzufügen, der mal gelöscht wurde am Anfang
-    k=u_matrix.sum(axis=0)
-    k =  [i * -1 for i in k]
+    #k=u_matrix.sum(axis=0)
+    #k =  [i * -1 for i in k]
 
     #Zeile zur Inzidenzmatrix hinzufügen
-    u_matrix = np.vstack([u_matrix,k])
+    #Am 1..08 weggenommen
+    #u_matrix = np.vstack([u_matrix,k])
 
     #Matrix kopieren
     matrix = np.array([elem for elem in u_matrix])
@@ -112,8 +114,16 @@ def tiefensuche(u_matrix):
     print("Bauteile nicht im Spanningtree:",bauteile)
     #print("-------------------------------------")
     #Erstellung der Loop
+
+    #Die, welche zum Masseknoten führen, können niemals in einer Loop sein und können daher raus
+    for x in range(len(tupelList)):
+        if len(tupelList[x]) == 1:
+            tupelList.remove(tupelList[x])
+
+ 
     loopList = []
     kantenList = []
+
     for loop in bauteile:
         tempBauteileImLoop = [x for x in fertigeBauteile]
         #print("tempBauteileImLoop:", tempBauteileImLoop)
@@ -127,20 +137,28 @@ def tiefensuche(u_matrix):
                 temp.append(row)
         tempTupelList.append(temp)
 
-        unique, counts = np.unique(tempTupelList, return_counts=True)
-        #print("tempTupelList:", tempTupelList)
-        #print("140:",np.unique(tempTupelList, return_counts=True))
-        while any(n % 2 == 1 for n in counts):
-            x = reduziere(tempTupelList, unique, counts)
-            tempTupelList.remove(tempTupelList[x])
-            tempBauteileImLoop.remove(tempBauteileImLoop[x])
+            #Die, welche zum Masseknoten führen, können niemals in einer Loop sein und können daher raus
+        for x in range(len(tempTupelList)):
+            if len(tempTupelList[x]) == 1:
+                tempTupelList.remove(tempTupelList[x])
+        
+        #Nur Loop, wenn die einwegigen Kanten (Wegen Masse) rausgenommen wurden und die Liste nicht der des SPannungsbaums entspricht
+        if not (tempTupelList) == (tupelList):
+            
             unique, counts = np.unique(tempTupelList, return_counts=True)
-        #print("Ergebnis")
-        #print("Kanten im Loop;", tempBauteileImLoop)
-        #print("Tupelliste:", tempTupelList)
-        #print("--------------")
-        loopList.append(tempTupelList)
-        kantenList.append(tempBauteileImLoop)
+            print("tempTupelList:", tempTupelList)
+            #print("140:",np.unique(tempTupelList, return_counts=True))
+            while any(n % 2 == 1 for n in counts):
+                x = reduziere(tempTupelList, unique, counts)
+                tempTupelList.remove(tempTupelList[x])
+                tempBauteileImLoop.remove(tempBauteileImLoop[x])
+                unique, counts = np.unique(tempTupelList, return_counts=True)
+            #print("Ergebnis")
+            #print("Kanten im Loop;", tempBauteileImLoop)
+            #print("Tupelliste:", tempTupelList)
+            #print("--------------")
+            loopList.append(tempTupelList)
+            kantenList.append(tempBauteileImLoop)
     w_matrix = buildWMatrix(loopList, kantenList, len(u_matrix[0]), u_matrix)
     v_matrix = buildVMatrix(fertigeBauteile, len(u_matrix[0]))
     return v_matrix, w_matrix
@@ -227,7 +245,7 @@ def buildVMatrix(spanningtreeKanten, numberOfKanten):
 
 
 
-#tiefensuche(u_matrix)
+tiefensuche(u_matrix)
 
 
         
