@@ -168,13 +168,13 @@ class Window(QtGui.QApplication):
         self.main_window.showMaximized()
 
         app_icon = QtGui.QIcon()
-        app_icon.addFile("favicon.ico")
-        app_icon.addFile('favicon.ico', QtCore.QSize(16,16))
-        app_icon.addFile('favicon.ico', QtCore.QSize(24,24))
-        app_icon.addFile('favicon.ico', QtCore.QSize(32,32))
-        app_icon.addFile('favicon.ico', QtCore.QSize(48,48))
-        app_icon.addFile('favicon.ico', QtCore.QSize(256,256))
-        self.setWindowIcon(QtGui.QIcon("favicon.ico"))
+        app_icon.addFile("../resources/favicon.ico")
+        app_icon.addFile('../resources/favicon.ico', QtCore.QSize(16,16))
+        app_icon.addFile('../resources/favicon.ico', QtCore.QSize(24,24))
+        app_icon.addFile('../resources/favicon.ico', QtCore.QSize(32,32))
+        app_icon.addFile('../resources/favicon.ico', QtCore.QSize(48,48))
+        app_icon.addFile('../resources/favicon.ico', QtCore.QSize(256,256))
+        self.setWindowIcon(QtGui.QIcon("../resources/favicon.ico"))
         self.main_window.setWindowIcon(app_icon)
 
 
@@ -328,7 +328,7 @@ class Window(QtGui.QApplication):
 
         self.image = QtGui.QLabel()
         self.image.setGeometry(50, 40, 250, 250)
-        self.pixmap = QtGui.QPixmap("ergebnis.png")
+        self.pixmap = QtGui.QPixmap("../resources/ergebnis.png")
         self.image.setPixmap(self.pixmap)
         self.image.setObjectName("imageCircuit")
         #image.show()
@@ -498,7 +498,8 @@ class Window(QtGui.QApplication):
     def save(self):
 
         objectsToSave = [self.controler, [self.potenzialDropDownFrom.itemText(i) for i in range(self.potenzialDropDownFrom.count())],  [self.potenzialDropDownTo.itemText(i) for i in range(self.potenzialDropDownTo.count())]]
-        pathFileName = QtGui.QFileDialog.getSaveFileName(None, 'Load ECS-Project', '', 'pickle(*.pickle)') 
+        pathFileName = QtGui.QFileDialog.getSaveFileName(None, 'Load ECS-Project', '../saved-circuits', 'pickle(*.pickle)')
+ 
 
         with open(pathFileName, 'wb') as handle:
             pickle.dump(objectsToSave, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -522,7 +523,7 @@ class Window(QtGui.QApplication):
 
 
         if not isNew:
-            pathFileName = QtGui.QFileDialog.getOpenFileName(None, 'Load ECS-Project', '', 'pickle(*.pickle)') 
+            pathFileName = QtGui.QFileDialog.getOpenFileName(None, 'Load ECS-Project', '../saved-circuits', 'pickle(*.pickle)') 
             
         else: 
             pathFileName = "Standard.pickle"

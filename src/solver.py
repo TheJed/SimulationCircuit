@@ -304,8 +304,8 @@ class Solver:
    
     def i_c(self, t):
          #TODO fertig implementieren. VL wird berechnet aus anderen sachen !!!!
-        summand1 = self.p_c.transpose.dot(self.ai_v).dot(self.i_s(t))
-        summand2 = self.p_c.transpose.dot(self.al_v).dot(self.v_matrix).dot(self.i_star(t))
+        summand1 = self.p_c.transpose().dot(self.ai_v).dot(self.i_s(t))
+        summand2 = self.p_c.transpose().dot(self.al_v).dot(self.v_matrix).dot(self.i_star(t))
         function = np.add(summand1, summand2)
         return function
 

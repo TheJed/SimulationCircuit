@@ -65,13 +65,13 @@ class Controler:
         #TODO Startobjekt festlegen,nicht immer nur I1
         if not any("#I1" in s for s in self.netHandler.fileLines):
             self.netHandler.addLineToNetlist("I1", self.circuitDrawing.potenzialNummer, 0, 0.0)
-        self.netHandler.writeFile("Schaltung.txt", self.circuitDrawing.potenzialNummer)
+        self.netHandler.writeFile("../resources/Schaltung.txt", self.circuitDrawing.potenzialNummer)
 
     def simulate(self):
         self.writeNetList()
 
        
-        input_data = self.netHandler.readFile("Schaltung.txt")
+        input_data = self.netHandler.readFile("../resources/Schaltung.txt")
         schaltung = nt.Schaltung(input_data)
         schaltung.initInzidenzMatritzen()
 

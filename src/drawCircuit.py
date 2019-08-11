@@ -96,7 +96,7 @@ class CircuitDrawing():
             self.wasFullyConnectedBeforeUndo.append(False)
             print("c")
         self.circuitDrawing.draw()
-        self.circuitDrawing.save("ergebnis.png")
+        self.circuitDrawing.save("../resources/ergebnis.png")
         
         return elabel
 
@@ -123,5 +123,5 @@ class CircuitDrawing():
 
     def draw(self):
         self.circuitDrawing.draw()
-        self.circuitDrawing.save("ergebnis.png")
+        self.circuitDrawing.save("../resources/ergebnis.png")
 
