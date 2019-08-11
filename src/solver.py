@@ -97,10 +97,11 @@ class Solver:
 
         self.createInzidenzMatrices()
 
-        #self.v_matrix, self.w_matrix = createV_W_Matrix.tiefensuche(self.ail_vcr)
+        self.v_matrix, self.w_matrix = createV_W_Matrix.tiefensuche(self.ail_vcr)
         #TODO berechnen neu wegen Beispiel. hier Fehler
-        self.w_matrix = np.array([[]])
+        #self.w_matrix = np.array([[]])
         self.v_matrix = np.array([[1]])
+        
         
 
         #A mal Q muss nämlich immer 0 ergeben, bzw A transponiert

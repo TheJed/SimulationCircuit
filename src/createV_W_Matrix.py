@@ -230,6 +230,10 @@ def buildWMatrix(loopList, kantenList, numberOfKanten, u_matrix):
 
     w_matrix = np.array(w_matrix)
     print("W-Matrix: \n", w_matrix.T)
+
+    #TODO hier schöner machen
+    if not w_matrix:
+        return np.array([[]])
     return w_matrix
 
 def buildVMatrix(spanningtreeKanten, numberOfKanten):
@@ -245,7 +249,7 @@ def buildVMatrix(spanningtreeKanten, numberOfKanten):
 
 
 
-tiefensuche(u_matrix)
+#tiefensuche(u_matrix)
 
 
         
