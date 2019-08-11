@@ -15,7 +15,6 @@ class Solver:
         self.schaltung = schaltung
         self.potencialList = schaltung.potencialList
         print("potenzialliste:", self.potencialList)
-        #e = [1.1,2,3.3,4]
         self.jl = 0
         #TODO funktionert nicht, weil überbestimmtes System
         #self.startwertEntkopplung(e)
@@ -30,10 +29,6 @@ class Solver:
         
         self.g_r = self.schaltung.getGr()
         self.v_t = self.schaltung.getV_t()
-
-        #TODO leeren Fall überarbeiten
-        self.q_v = []
-        self.p_v = []
 
         #Vs löschen
         self.c_v = self.findeZusammenhangskomponente(self.schaltung.inzidenz_v)
@@ -77,7 +72,6 @@ class Solver:
         print("Al_v: \n", self.al_v)
         
         
-        #tempMatrix = np.dot(self.q_r.transpose(), tempMatrix)
         tempMatrix = self.q_r.transpose().dot(tempMatrix)
         self.ai_vcr = np.dot(tempMatrix, self.inzidenz_i)
         print("Ai_cvr: \n", self.ai_vcr)
@@ -128,26 +122,18 @@ class Solver:
 
         print("Ergebnis Newton:", e_r)
     
-        #print("Test Function1:", self.function1(ec, j_li , e_r , 10))
-        #print("Test Function2:", self.function2(ec, j_li, e_r , 10))
-       
-        #print("Test ganze Function:", self.function(ec, j_li , e_r , 10))
-
-        #print(self.matrix_mc(ec, 10))
-        #print(self.matrix_ml(j_li, 10))
+        
         m = self.matrix(ec, j_li, t)
         print("M:", m.tolist())
 
 
         b = self.function(ec, j_li , e_r , t)
-        #print("b:", b.tolist())
-        #print("b-shape:",b.shape)
-        print("--------------")
+        
         self.solve(ec, j_li)
         
         #e= LA.solve(m,b)
-        e = linalgSolver.cg(m,b)
-        print("Ergebnis der Simulation:", e[0])
+        #e = linalgSolver.cg(m,b)
+        #print("Ergebnis der Simulation:", e[0])
 
 
     def g_xyt(self, ec,e_r,t):
@@ -162,7 +148,6 @@ class Solver:
         qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
 
         functionPart_2 = np.dot(functionPart_2, qliJl_i)
-        #e = self.i_r(t)
 
         return np.add(np.add(funktionPart_1,functionPart_2),self.i_r(t))
 
@@ -232,8 +217,7 @@ class Solver:
         return matrix
 
     def function(self, ec, jl_i, e_r, t):
-        #function = [-self.function1(ec, jl_i, e_r, t), - self.function2(ec, jl_i, e_r, t)]
-        #function = np.array(function)
+        
         function1 = -self.function1(ec, jl_i, e_r, t)
         function2 = -self.function2(ec, jl_i, e_r, t)
         
@@ -251,11 +235,8 @@ class Solver:
         summand1 = self.p_c.transpose().dot(self.ac_v)
         parameter = np.transpose(self.ac_v).dot(self.p_c).dot(ec)
         summand1 = summand1.dot(self.ableitung_c_nacht(parameter, t))
-
-        v_matrix = self.v_matrix
-        #v_matrix = np.delete(self.v_matrix, len(self.v_matrix)-1, axis=0)
         
-        qliJl_i = self.jl - v_matrix.dot(self.i_star(t))
+        qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
         summand2 = self.p_c.transpose().dot(self.al_v).dot(qliJl_i)
 
         parameter2 = self.ar_vc.transpose().dot(self.p_r).dot(e_r)
@@ -268,10 +249,8 @@ class Solver:
         return function1
 
     def function2(self, ec, jl_i, e_r, t):
-        v_matrix = self.v_matrix
-        #v_matrix = np.delete(self.v_matrix, len(self.v_matrix)-1, axis=0)
-        
-        qliJl_i = self.jl - v_matrix.dot(self.i_star(t))
+       
+        qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
         
         minuend1 = np.transpose(self.w_matrix).dot(self.ableitung_l_nacht(qliJl_i, t))
         minuend2 = np.transpose(self.w_matrix).dot(np.transpose(self.al_v)).dot(self.p_c).dot(ec)
@@ -308,10 +287,8 @@ class Solver:
 
     def i_star(self, t):
         #TODO
-        #letzte Zeile wegen Masseknoten löschen zum mulitplizieren
-        #v_matrix = np.delete(self.v_matrix, len(self.v_matrix)-1, axis=0)
-        v_matrix = self.v_matrix
-        matrixA = np.dot(self.al_vcr,v_matrix)
+
+        matrixA = np.dot(self.al_vcr,self.v_matrix)
 
         vektorB = np.dot(np.dot(self.ai_vcr,-1), self.i_s(t))
         ergebnis = linalgSolver.cg(matrixA,vektorB)
@@ -341,7 +318,7 @@ class Solver:
         ergebnis = -self.w_matrix.transpose().dot(self.inzidenz_l.transpose()).dot(self.p_v).dot(self.v_star(t))
         return ergebnis
 
-
+    #TODO ungeklärt
     def startwertEntkopplung(self, e):
         matrix1 = self.p_v
         matrix2 = self.q_v.dot(self.p_c)
@@ -390,13 +367,7 @@ class Solver:
 
         return matrix.transpose()
 
-        
 
-
-            
-
-        
-    
     def isMasse(self, inzidenz):
         if(len(inzidenz) == 0):
             return False
@@ -536,35 +507,11 @@ class Solver:
         t = np.arange(0, 20, 0.2)
         print("x_start:", x)
         print("T:", t)
-        #input()
-        t0 = 0
-        function = lambda x, t: self.cgSolve(x,t)
+
         y = odeint(self.cgSolve, x, t)
 
-        """t = np.arange(0, 100000, 0.1)
-        y0 = [7.e6, 0., 0., 0., 1.e3, 0.]
-        y = odeint(self.dr_dt, y0, t)"""
+        
         print(y)
-       
-    def dr_dt(self,y, t):
-        """Integration of the governing vector differential equation.
-        d2r_dt2 = -(mu/R^3)*r with d2r_dt2 and r as vecotrs.
-        Initial position and velocity are given.
-        y[0:2] = position components
-        y[3:] = velocity components"""
-    
-        G = 6.672*(10**-11)
-        M = 5.972*(10**24)
-        mu = G*M
-        r = np.sqrt(y[0]**2 + y[1]**2 + y[2]**2)
-    
-        dy0 = y[3]
-        dy1 = y[4]
-        dy2 = y[5]
-        dy3 = -(mu / (r**3)) * y[0]
-        dy4 = -(mu / (r**3)) * y[1]
-        dy5 = -(mu / (r**3)) * y[2]
-        return [dy0, dy1, dy2, dy3, dy4, dy5]
 
     def cgSolve(self, x, t):
 
@@ -586,21 +533,3 @@ class Solver:
         self.e_r = optimize.newton(f, self.e_r,tol=1e-10, maxiter=50000)
         return self.e_r
         
-
-    def tesT(self):
-        y0, t0 = [1.0j, 2.0], 0
-
-        def f(t, y, arg1):
-            return [1j*arg1*y[0] + y[1], -arg1*y[1]**2]
-        def jac(t, y, arg1):
-            return [[1j*arg1, 1], [0, -arg1*2*y[1]]]
-
-        r = odSolver(f, jac).set_integrator('zvode', method='bdf', with_jacobian=True)
-        r.set_initial_value(y0, t0).set_f_params(2.0).set_jac_params(2.0)
-        t1 = 10
-        dt = 1
-        while r.successful() and r.t < t1:
-            r.integrate(r.t+dt)
-            print(str(r.t) + "---------" +  str(r.y))
-
-
