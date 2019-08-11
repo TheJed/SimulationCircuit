@@ -51,7 +51,8 @@ class Controler:
         return elabel
 
     def addPotencialValue(self, name, value):
-        self.netHandler.addPotencialLineToNetList(name, value)
+        if not any(name in s for s in self.netHandler.fileLines):
+            self.netHandler.addPotencialLineToNetList(name, value)
 
     def undoAddComponent(self):
         self.netHandler.fileLines.pop()
@@ -61,8 +62,8 @@ class Controler:
         self.circuitDrawing.draw()
 
     def writeNetList(self):
-        #TODO Startobjekt festlegen
-        if not ("#" + str("I1") in self.netHandler.fileLines):
+        #TODO Startobjekt festlegen,nicht immer nur I1
+        if not any("#I1" in s for s in self.netHandler.fileLines):
             self.netHandler.addLineToNetlist("I1", self.circuitDrawing.potenzialNummer, 0, 0.0)
         self.netHandler.writeFile("Schaltung.txt", self.circuitDrawing.potenzialNummer)
 
