@@ -1,5 +1,6 @@
 import matplotlib
 matplotlib.use('Agg')
+import os
 
 #from matplotlib import pyplot as plt
 
@@ -9,9 +10,16 @@ import SchemDraw.elements as e
 import netlistHandler as netHandler
 
 class CircuitDrawing():
+
     def __init__(self):
 
-        
+        current_path = os.path.realpath(__file__)
+        current_path = current_path.split("\\")
+        pathToProgramm= current_path[:-2 or None]
+        self.pathToRessources = ""
+        for s in pathToProgramm:
+            self.pathToRessources += s +"\\" 
+        self.pathToRessources += "resources\\"
 
         self.fileLine = []
 
@@ -35,7 +43,7 @@ class CircuitDrawing():
         
 
         
-
+    
 
     def addComponent(self, component, direction, name, eFromIndex, eToIndex):
         
@@ -96,7 +104,7 @@ class CircuitDrawing():
             self.wasFullyConnectedBeforeUndo.append(False)
             print("c")
         self.circuitDrawing.draw()
-        self.circuitDrawing.save("../resources/ergebnis.png")
+        self.circuitDrawing.save(self.pathToRessources + "ergebnis.png")
         
         return elabel
 
@@ -123,5 +131,5 @@ class CircuitDrawing():
 
     def draw(self):
         self.circuitDrawing.draw()
-        self.circuitDrawing.save("../resources/ergebnis.png")
+        self.circuitDrawing.save(self.pathToRessources + "ergebnis.png")
 

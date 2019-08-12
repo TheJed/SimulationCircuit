@@ -46,12 +46,12 @@ def erstelleSpannbaum(matrix):
 def tiefensuche(u_matrix):
 
     #Zeile für Masseknoten hinzufügen, der mal gelöscht wurde am Anfang
-    #k=u_matrix.sum(axis=0)
-    #k =  [i * -1 for i in k]
+    k=u_matrix.sum(axis=0)
+    k =  [i * -1 for i in k]
 
     #Zeile zur Inzidenzmatrix hinzufügen
     #Am 1..08 weggenommen
-    #u_matrix = np.vstack([u_matrix,k])
+    u_matrix = np.vstack([u_matrix,k])
 
     #Matrix kopieren
     matrix = np.array([elem for elem in u_matrix])
@@ -232,7 +232,7 @@ def buildWMatrix(loopList, kantenList, numberOfKanten, u_matrix):
     print("W-Matrix: \n", w_matrix.T)
 
     #TODO hier schöner machen
-    if not w_matrix:
+    if not w_matrix.tolist():
         return np.array([[]])
     return w_matrix
 

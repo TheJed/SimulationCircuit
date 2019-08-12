@@ -1,3 +1,9 @@
+"""
+    This module handels the mathe behind the simulation
+    
+    :copyright: (c) 2019 by Tobias Klein.
+"""
+
 import numpy as np
 import createV_W_Matrix
 from sympy import Matrix
@@ -21,6 +27,7 @@ class Solver:
         #self.startwertEntkopplung(e)
 
     def createInzidenzMatrices(self):
+        """This function creates all the reduced Inzidenz-Matrices"""
 
         self.inzidenz_v = self.schaltung.inzidenz_v
         self.inzidenz_c = self.schaltung.inzidenz_c
@@ -78,16 +85,23 @@ class Solver:
         self.ai_vcr = np.dot(self.q_r.transpose(), self.ai_vc)
         print("Ai_vcr: \n", self.ai_vcr)
 
-        self.ail_vcr = np.concatenate((np.array(self.al_vcr),np.array(self.ai_vcr)),axis=1)
-        print("ail_vcr:", self.ail_vcr)
+        #self.ail_vcr = np.concatenate((np.array(self.al_vcr),np.array(self.ai_vcr)),axis=1)
+        #print("ail_vcr:", self.ail_vcr)
 
+    
     def simulate(self):
+        """This function starts the simulation. 
+        The simulation of future values is done by an ODE-Solver
+        
+        :return: Returns a list with all simulate values for specific t's.
+        :rtype: list of tupels."""
 
         self.createInzidenzMatrices()
 
-        self.v_matrix, self.w_matrix = createV_W_Matrix.tiefensuche(self.ail_vcr)
+        self.v_matrix, self.w_matrix = createV_W_Matrix.tiefensuche(self.al_vcr)
         #TODO berechnen neu wegen Beispiel. hier Fehler
         #self.w_matrix = np.array([[]])
+        print()
         self.v_matrix = np.array([[1]])
         
         
@@ -104,12 +118,28 @@ class Solver:
         x = ec
         t = 10
 
-        self.solve(ec, j_li)
+        #self.solve(ec, j_li)
+        self.e_r = [0,0]
+        print("ec:", ec)
+        x = [np.array(ec), j_li]
+        t = np.arange(0, 10, 1.0)
+        print("x_start:", x)
+        print("T:", t)
+
+        y = odeint(self.cgSolve, x, t)
+
+        
+        print(y)
         
         #TODO hier die rückentkoppeltenwerte übergbene
         return np.array(self.solution)
 
     def g_xyt(self, ec,e_r,t):
+        """This function provides a for the simulation nessesary function.
+        Therefore it contains no business-logic, only simple math-operations to build the function
+        
+        :return: Returns the builded function.
+        :rtype: function."""
 
         funktionPart_1 = np.dot(np.transpose(self.p_r), self.ar_vc)
 
@@ -127,6 +157,11 @@ class Solver:
 
     #TODO ifs wenn irgendwas leer ist
     def gr_not_vc(self, x,ec,t):
+        """This function provides a for the simulation nessesary function.
+        Therefore it contains no business-logic, only simple math-operations to build the function
+        
+        :return: Returns the builded function.
+        :rtype: function."""
         
         if not (self.ar_v).tolist() or not (self.p_c).tolist():
             parameter1 = 0
@@ -147,6 +182,11 @@ class Solver:
         return f
 
     def matrix(self, ec, jl_i, t):
+        """This function provides a for the simulation nessesary matrix.
+        Therefore it contains no business-logic, only simple math-operations to build the matrix
+        
+        :return: Returns the builded matrix.
+        :rtype: numpy.array"""
         mc = np.array(self.matrix_mc(ec, t))
         ml = self.matrix_ml(jl_i, t)
         if not mc.tolist() :
@@ -171,6 +211,11 @@ class Solver:
         return matrix
 
     def matrix_mc(self, ec, t):
+        """This function provides a for the simulation nessesary matrix.
+        Therefore it contains no business-logic, only simple math-operations to build the matrix
+        
+        :return: Returns the builded matrix.
+        :rtype: numpy.array"""
         
         matrix = np.dot(np.transpose(self.p_c), self.ac_v)
         parameter = np.dot(np.transpose(self.ac_v), self.p_c)
@@ -180,6 +225,11 @@ class Solver:
         return matrix
 
     def matrix_ml(self, jl_i, t):
+        """This function provides a for the simulation nessesary matrix.
+        Therefore it contains no business-logic, only simple math-operations to build the matrix
+        
+        :return: Returns the builded matrix.
+        :rtype: numpy.array"""
 
         v_matrix = self.v_matrix
 
@@ -190,6 +240,11 @@ class Solver:
         return matrix
 
     def function(self, ec, jl_i, e_r, t):
+        """This function provides a for the simulation nessesary function.
+        Therefore it contains no business-logic, only simple math-operations to build the function
+        
+        :return: Returns the builded function.
+        :rtype: function."""
         
         function1 = -self.function1(ec, jl_i, e_r, t)
         function2 = -self.function2(ec, jl_i, e_r, t)
@@ -205,6 +260,11 @@ class Solver:
         return function
 
     def function1(self, ec, jl_i, e_r, t):
+        """This function provides a for the simulation nessesary function.
+        Therefore it contains no business-logic, only simple math-operations to build the function
+        
+        :return: Returns the builded function.
+        :rtype: function."""
         summand1 = self.p_c.transpose().dot(self.ac_v)
         parameter = np.transpose(self.ac_v).dot(self.p_c).dot(ec)
         summand1 = summand1.dot(self.ableitung_c_nacht(parameter, t))
@@ -222,6 +282,11 @@ class Solver:
         return function1
 
     def function2(self, ec, jl_i, e_r, t):
+        """This function provides a for the simulation nessesary function.
+        Therefore it contains no business-logic, only simple math-operations to build the function
+        
+        :return: Returns the builded function.
+        :rtype: function."""
        
         qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
         
@@ -250,6 +315,12 @@ class Solver:
         return x
 
     def v_star(self,t):
+        """This function provides a for the simulation nessesary function.
+        It is a modifed other function, which the user selected
+        Therefore it contains no business-logic, only simple math-operations to build the function
+        
+        :return: Returns the builded function.
+        :rtype: function."""
 
         if not (self.inzidenz_v):
             return 0
@@ -263,6 +334,12 @@ class Solver:
         return t
 
     def i_star(self, t):
+        """This function provides a for the simulation nessesary function.
+        It is a modifed other function, which the user selected
+        Therefore it contains no business-logic, only simple math-operations to build the function
+        
+        :return: Returns the builded function.
+        :rtype: function."""
         #TODO
 
         matrixA = np.dot(self.al_vcr,self.v_matrix)
@@ -273,6 +350,12 @@ class Solver:
         return ergebnis[0]
    
     def i_c(self, t):
+        """This function provides a for the simulation nessesary function.
+        It is a modifed other function, which the user selected
+        Therefore it contains no business-logic, only simple math-operations to build the function
+        
+        :return: Returns the builded function.
+        :rtype: function."""
          #TODO fertig implementieren. VL wird berechnet aus anderen sachen !!!!
         summand1 = self.p_c.transpose().dot(self.ai_v).dot(self.i_s(t))
         summand2 = self.p_c.transpose().dot(self.al_v).dot(self.v_matrix).dot(self.i_star(t))
@@ -284,6 +367,12 @@ class Solver:
         return [t]
     
     def i_r(self,t):
+        """This function provides a for the simulation nessesary function.
+        It is a modifed other function, which the user selected
+        Therefore it contains no business-logic, only simple math-operations to build the function
+        
+        :return: Returns the builded function.
+        :rtype: function."""
          #TODO fertig implementieren. VL wird berechnet aus anderen sachen !!!!
         print()
         
@@ -299,6 +388,12 @@ class Solver:
 
     #TODO mit anderen Solver auf Zeit vergleichen und austauschbar in eine Methode packen
     def e_l(self, e_c, e_r, t):
+        """Calculates the e_l value (value of decoupled potenzials) based on e_c and e_r
+        
+        :param e_c: calculated e_c value from the simulation
+        :param e_r: calculated e_r value from the simulation
+        :return: Returns calculated e_l value.
+        :rtype: vector."""
 
         m = self.v_matrix.transpose().dot(self.al_vcr.transpose())
         minuend1 = self.v_matrix.transpose().dot(self.ableitung_l_nacht(self.w_matrix, t))
@@ -316,6 +411,7 @@ class Solver:
 
     #TODO ungeklärt
     def startwertEntkopplung(self, e):
+
         matrix1 = self.p_v
         matrix2 = self.q_v.dot(self.p_c)
         matrix3 = self.q_v.dot(self.q_c).dot(self.p_r)
@@ -490,20 +586,6 @@ class Solver:
         print(pArray)
         return pArray
 
-    def solve(self, ec, j_li):
-
-        self.e_r = [0,0]
-        print("ec:", ec)
-        x = [np.array(ec), j_li]
-        t = np.arange(0, 10, 1.0)
-        print("x_start:", x)
-        print("T:", t)
-
-        y = odeint(self.cgSolve, x, t)
-
-        
-        print(y)
-
     def cgSolve(self, x, t):
 
         #print("x:", x)
@@ -522,6 +604,7 @@ class Solver:
     def newton(self,ec, t):
         
         f = lambda e_r: self.g_xyt(ec,e_r,t)
+        #print("Hiiii", optimize.newton(f, self.e_r,tol=1e-10, maxiter=50000, full_output=True))
         self.e_r = optimize.newton(f, self.e_r,tol=1e-10, maxiter=50000, disp=False)
         return self.e_r
         

@@ -12,6 +12,7 @@ import pyqtgraph as pg
 import math
 import inspect 
 import random
+import os
 
 import SchemDraw as schem
 import SchemDraw.elements as e
@@ -36,10 +37,14 @@ class Window(QtGui.QApplication):
     EXIT_CODE_REBOOT = -666
     
     def __init__(self, sys_argv):
-        """all_functions = inspect.getmembers(functionLib, inspect.isfunction)
         
-        print(all_functions)
-        input()"""
+        current_path = os.path.realpath(__file__)
+        current_path = current_path.split("\\")
+        pathToProgramm= current_path[:-2 or None]
+        self.path = ""
+        for s in pathToProgramm:
+            self.path += s +"\\" 
+        
         regexp_onlyDoubles = QtCore.QRegExp('^([-+]?\d*\.\d+|\d+)$')
         self.validator = QtGui.QRegExpValidator(regexp_onlyDoubles)
 
@@ -62,7 +67,7 @@ class Window(QtGui.QApplication):
 
         #----------------------------Init Applikation----------------------------# 
 
-        cssFile = "../resources/css-gui.txt"
+        cssFile = self.path + "\\resources\\css-gui.txt"
         css = ""
         with open(cssFile,"r") as fh:
             css += (fh.read())
@@ -170,6 +175,7 @@ class Window(QtGui.QApplication):
 
         inputComponentLayout3 = QtGui.QHBoxLayout()
 
+
         self.componentValueLabel = QtGui.QLabel("Start-Value of Component")
         self.componentValueLabel.hide()
         self.componentValueInput = QtGui.QLineEdit()
@@ -178,6 +184,11 @@ class Window(QtGui.QApplication):
         self.componentValueInput.hide()
         self.componentValueInput.setValidator(self.validator)
         self.componentValueInput.textEdited.connect(self.on_valueInputChanged)
+
+        self.componentFunctionDropDown = QtGui.QComboBox()
+        self.componentFunctionDropDown.currentIndexChanged.connect(self.on_valueDropDownChanged)
+        self.componentFunctionDropDown.addItem("Funktionsauswahl")
+        self.componentFunctionDropDown.addItem("Dummy-Funktion")
 
         inputComponentLayout3.addWidget(self.componentValueLabel)
         inputComponentLayout3.addWidget(self.componentValueInput)
@@ -213,13 +224,13 @@ class Window(QtGui.QApplication):
 
     def setAppIcon(self):
         app_icon = QtGui.QIcon()
-        app_icon.addFile("../resources/favicon.ico")
-        app_icon.addFile('../resources/favicon.ico', QtCore.QSize(16,16))
-        app_icon.addFile('../resources/favicon.ico', QtCore.QSize(24,24))
-        app_icon.addFile('../resources/favicon.ico', QtCore.QSize(32,32))
-        app_icon.addFile('../resources/favicon.ico', QtCore.QSize(48,48))
-        app_icon.addFile('../resources/favicon.ico', QtCore.QSize(256,256))
-        self.setWindowIcon(QtGui.QIcon("../resources/favicon.ico"))
+        app_icon.addFile(self.path + "\\resources\\favicon.ico")
+        app_icon.addFile(self.path + "\\resources\\favicon.ico", QtCore.QSize(16,16))
+        app_icon.addFile(self.path + "\\resources\\favicon.ico", QtCore.QSize(24,24))
+        app_icon.addFile(self.path + "\\resources\\favicon.ico", QtCore.QSize(32,32))
+        app_icon.addFile(self.path + "\\resources\\favicon.ico", QtCore.QSize(48,48))
+        app_icon.addFile(self.path + "\\resources\\favicon.ico", QtCore.QSize(256,256))
+        self.setWindowIcon(QtGui.QIcon(self.path + "\\resources\\favicon.ico"))
         self.main_window.setWindowIcon(app_icon)
 
     def setMenu(self):
@@ -298,7 +309,7 @@ class Window(QtGui.QApplication):
 
         self.image = QtGui.QLabel()
         self.image.setGeometry(50, 40, 250, 250)
-        self.pixmap = QtGui.QPixmap("../resources/ergebnis.png")
+        self.pixmap = QtGui.QPixmap(self.path + "\\resources\\ergebnis.png")
         self.image.setPixmap(self.pixmap)
         self.image.setObjectName("imageCircuit")
         #image.show()
@@ -337,11 +348,6 @@ class Window(QtGui.QApplication):
         self.directionDropwDown.addItem("up")
         self.directionDropwDown.addItem("down")
 
-        self.componentFunctionDropDown = QtGui.QComboBox()
-        self.componentFunctionDropDown.currentIndexChanged.connect(self.on_valueDropDownChanged)
-        self.componentFunctionDropDown.addItem("Funktionsauswahl")
-        self.componentFunctionDropDown.addItem("Dummy-Funktion")
-
     def createNewCircuit(self):
         
         #QtGui.qApp.exit(self.EXIT_CODE_REBOOT)
@@ -373,7 +379,7 @@ class Window(QtGui.QApplication):
     def save(self):
 
         objectsToSave = [self.controler, [self.potenzialDropDownFrom.itemText(i) for i in range(self.potenzialDropDownFrom.count())],  [self.potenzialDropDownTo.itemText(i) for i in range(self.potenzialDropDownTo.count())]]
-        pathFileName = QtGui.QFileDialog.getSaveFileName(None, 'Load ECS-Project', '../saved-circuits', 'pickle(*.pickle)')
+        pathFileName = QtGui.QFileDialog.getSaveFileName(None, 'Load ECS-Project', self.path + '\\saved-circuits', 'pickle(*.pickle)')
  
 
         with open(pathFileName, 'wb') as handle:
@@ -396,10 +402,10 @@ class Window(QtGui.QApplication):
 
 
         if not isNew:
-            pathFileName = QtGui.QFileDialog.getOpenFileName(None, 'Load ECS-Project', '../saved-circuits', 'pickle(*.pickle)') 
+            pathFileName = QtGui.QFileDialog.getOpenFileName(None, 'Load ECS-Project', self.path + '\\saved-circuits', 'pickle(*.pickle)') 
             
         else: 
-            pathFileName = "../saved-circuits/Standard.pickle"
+            pathFileName = self.path + "\\saved-circuits\\Standard.pickle"
 
         with open(pathFileName, 'rb') as handle:
                 loadedObjects = pickle.load(handle)
@@ -484,7 +490,7 @@ class Window(QtGui.QApplication):
   
     def updateGraph(self):
         
-        self.pixmap = QtGui.QPixmap("../resources/ergebnis.png")
+        self.pixmap = QtGui.QPixmap(self.path + "\\resources\\ergebnis.png")
         self.image.setPixmap(self.pixmap)
 
     def simulate(self):

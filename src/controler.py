@@ -1,6 +1,7 @@
 import netlistHandler as nt
 import drawCircuit as draw
 import solver as solv
+import os
 
 class Controler:
     def __init__(self, *args, **kwargs):
@@ -11,6 +12,14 @@ class Controler:
         self.circuitDrawing = draw.CircuitDrawing()
         self.circuitDrawing.draw()
         self.solutionData = []
+
+        current_path = os.path.realpath(__file__)
+        current_path = current_path.split("\\")
+        pathToProgramm= current_path[:-2 or None]
+        self.pathToRessources = ""
+        for s in pathToProgramm:
+            self.pathToRessources += s +"\\" 
+        self.pathToRessources += "resources\\"
 
     def addComponent(self, component, direction, name, eFromIndex, eToIndex, value):
         elabel = self.circuitDrawing.addComponent(component, direction, name, eFromIndex, eToIndex)
@@ -66,13 +75,13 @@ class Controler:
         #TODO Startobjekt festlegen,nicht immer nur I1
         if not any("#I1" in s for s in self.netHandler.fileLines):
             self.netHandler.addLineToNetlist("I1", self.circuitDrawing.potenzialNummer, 0, 0.0)
-        self.netHandler.writeFile("../resources/Schaltung.txt", self.circuitDrawing.potenzialNummer)
+        self.netHandler.writeFile(self.pathToRessources + "Schaltung.txt", self.circuitDrawing.potenzialNummer)
 
     def simulate(self):
         self.writeNetList()
 
        
-        input_data = self.netHandler.readFile("../resources/Schaltung.txt")
+        input_data = self.netHandler.readFile(self.pathToRessources + "Schaltung.txt")
         schaltung = nt.Schaltung(input_data)
         schaltung.initInzidenzMatritzen()
 
