@@ -6,13 +6,11 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import FigureManagerQT as Fig
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
-import matplotlib
 
 import PyQt4.QtCore as QtCore
 import pyqtgraph as pg
 import math
-import inspect 
+import inspect
 import random
 import os
 
@@ -27,7 +25,7 @@ import functionLib
 import test
 import inspect 
 
-from matplotlib import backend_bases
+#from matplotlib import backend_bases
 # mpl.rcParams['toolbar'] = 'None'
 
 
@@ -232,7 +230,11 @@ class Window(QtGui.QApplication):
 
         inputComponentLayout3.addWidget(self.componentValueLabel)
         inputComponentLayout3.addWidget(self.componentValueInput)
-        inputComponentLayout3.addWidget(self.componentFunctionDropDown)
+        inputComponentLayout3.addWidget(self.function_c_DropwDown)
+        inputComponentLayout3.addWidget(self.function_i_DropwDown)
+        inputComponentLayout3.addWidget(self.function_r_DropwDown)
+        inputComponentLayout3.addWidget(self.function_v_DropwDown)
+        inputComponentLayout3.addWidget(self.function_l_DropwDown)
 
         buttonAddComponent = QtGui.QPushButton('Add Component')
         buttonAddComponent.clicked.connect(self.addComponentToCircuit)
@@ -277,7 +279,6 @@ class Window(QtGui.QApplication):
     def setMenu(self):
         self.statusbar = self.main_window.statusBar()
     
-
         mainMenu = self.main_window.menuBar()
 
         fileMenu = mainMenu.addMenu("&File")
@@ -323,29 +324,59 @@ class Window(QtGui.QApplication):
         all_functions = inspect.getmembers(functionLib, inspect.isfunction)   
         print(all_functions)
 
-        c_functions = []
-        i_functions = []
-        r_functions = []
-        v_functions = []
-        l_functions = []
+        self.c_functions = []
+        self.i_functions = []
+        self.r_functions = []
+        self.v_functions = []
+        self.l_functions = []
 
         for functionTupel in all_functions:
             if "c_" in functionTupel[0]:
-                c_functions.append(functionTupel)
+                self.c_functions.append(functionTupel)
 
             elif "i_" in functionTupel[0]:
-                i_functions.append(functionTupel)
+                self.i_functions.append(functionTupel)
             elif "r_" in functionTupel[0]:
-                r_functions.append(functionTupel)
+                self.r_functions.append(functionTupel)
             elif "v_" in functionTupel[0]:
-                v_functions.append(functionTupel)
+                self.v_functions.append(functionTupel)
             elif "l_" in functionTupel[0]:
-                l_functions.append(functionTupel)
+                self.l_functions.append(functionTupel)
 
-        print(v_functions)
+       
+        self.function_c_DropwDown = QtGui.QComboBox()
+        self.function_c_DropwDown.addItem("Funktionsauswahl")
+        self.function_i_DropwDown = QtGui.QComboBox()
+        self.function_i_DropwDown.addItem("Funktionsauswahl")
+        self.function_r_DropwDown = QtGui.QComboBox()
+        self.function_r_DropwDown.addItem("Funktionsauswahl")
+        self.function_v_DropwDown = QtGui.QComboBox()
+        self.function_v_DropwDown.addItem("Funktionsauswahl")
+        self.function_l_DropwDown = QtGui.QComboBox()
+        self.function_l_DropwDown.addItem("Funktionsauswahl")
 
+        for functionTupel in self.c_functions:
+            self.function_c_DropwDown.addItem(functionTupel[0])
 
+        for functionTupel in self.i_functions:
+            self.function_i_DropwDown.addItem(functionTupel[0])
 
+        for functionTupel in self.r_functions:
+            self.function_r_DropwDown.addItem(functionTupel[0])
+        
+        for functionTupel in self.v_functions:
+            self.function_v_DropwDown.addItem(functionTupel[0])
+
+        for functionTupel in self.l_functions:
+            self.function_l_DropwDown.addItem(functionTupel[0])
+
+        
+        self.function_c_DropwDown.hide()
+        self.function_i_DropwDown.hide()
+        self.function_r_DropwDown.hide()
+        self.function_v_DropwDown.hide()
+        self.function_l_DropwDown.hide()
+        
     def creatPlotFigure(self):
 
         self.figure = Figure()
@@ -526,22 +557,63 @@ class Window(QtGui.QApplication):
         self.componentValueInput.setText("")
 
     def on_ComponentChanged(self):
+
+        self.function_c_DropwDown.hide()
+        self.function_i_DropwDown.hide()
+        self.function_r_DropwDown.hide()
+        self.function_v_DropwDown.hide()
+        self.function_l_DropwDown.hide()
+
+        self.componentValueInput.hide()
+        self.componentValueLabel.hide()
+
         if self.componentDropwDown.currentText() == "Spule":
             self.componentValueInput.setText("0.0")
             self.componentValueInput.show()
             self.componentValueLabel.show()
-        else:
-            self.componentValueInput.hide()
-            self.componentValueLabel.hide()
+
+            self.function_l_DropwDown.show()
+
+        elif self.componentDropwDown.currentText() == "Widerstand":
+            self.function_r_DropwDown.show()
+
+        elif self.componentDropwDown.currentText() == "Kondensator":
+            self.function_c_DropwDown.show()
+
+        elif self.componentDropwDown.currentText() == "Spannungsquelle":
+            self.function_v_DropwDown.show()
+
+        elif self.componentDropwDown.currentText() == "Stromquelle":
+            self.function_i_DropwDown.show()
+       #else:
+            #self.componentValueInput.hide()
+            #self.componentValueLabel.hide()
 
     def addComponentToCircuit(self):
         component = (str(self.componentDropwDown.currentText()))
+        function = "0"
+
+        if component == "Kondesator":
+            function = self.function_c_DropwDown.currentText()
+
+        if component == "Stromquelle":
+            function = self.function_i_DropwDown.currentText()
+
+        if component == "Widerstand":
+            function = self.function_r_DropwDown.currentText()
+
+        if component == "Spannungsquelle":
+            function = self.function_v_DropwDown.currentText()
+
+        if component == "Spule":
+            function = self.function_c_DropwDown.currentText()
+
         direction = (str(self.directionDropwDown.currentText()))
         name = (str(self.componentNameInput.text()))
         
         print(self.potenzialDropDownTo.itemText(self.potenzialDropDownTo.currentIndex()))
         print(self.potenzialDropDownTo.currentIndex())
-        elabel = self.controler.addComponent(component, direction, name, self.potenzialDropDownFrom.currentIndex(), self.potenzialDropDownTo.currentIndex(), self.componentValueInput.text())
+        elabel = self.controler.addComponent(component, direction, name, self.potenzialDropDownFrom.currentIndex(), self.potenzialDropDownTo.currentIndex(), self.componentValueInput.text(), function)
 
 
         if len(elabel) > 0:
@@ -599,7 +671,7 @@ class Window(QtGui.QApplication):
             
             potencialValueInput = QtGui.QLineEdit()
             potencialValueInput.setObjectName("")
-            potencialValueInput.setText("0.0")
+            potencialValueInput.setText("1.0")
             potencialValueInput.setValidator(self.validator)
             inputPotencialLayout.addWidget(potencialValueLabel)
             inputPotencialLayout.addWidget(potencialValueInput)

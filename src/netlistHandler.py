@@ -1,20 +1,23 @@
 import sys
 import numpy as np
 from sympy import Matrix
+import functionLib
 
 class Transistor:
-    def __init__(self, name, fluss_in, fluss_out, widerstand):
+    def __init__(self, name, fluss_in, fluss_out, value, function):
         self.name = name
         self.fluss_in = fluss_in
         self.fluss_out = fluss_out
-        self.widerstand = widerstand
+        self.value = value
+        self.function = function
 
 class Widerstand:
-    def __init__(self, name, fluss_in, fluss_out, widerstand):
+    def __init__(self, name, fluss_in, fluss_out, value, function):
         self.name = name
         self.fluss_in = fluss_in
         self.fluss_out = fluss_out
-        self.widerstand = widerstand
+        self.value = value
+        self.function = function
 
     def __str__(self):
         return "Widerstandname: " + self.name + " | Rein: " + str(self.fluss_in) + " | Raus: " + str(self.fluss_out) + "\n"
@@ -23,25 +26,28 @@ class Widerstand:
         return "Widerstandname: " + self.name + " | Rein: " + str(self.fluss_in) + " | Raus: " + str(self.fluss_out) + "\n"
 
 class Spule:
-    def __init__(self, name, fluss_in, fluss_out, widerstand):
+    def __init__(self, name, fluss_in, fluss_out, value, function):
         self.name = name
         self.fluss_in = fluss_in
         self.fluss_out = fluss_out
-        self.widerstand = widerstand
+        self.value = value
+        self.function = function
 
 class V:
-    def __init__(self, name, fluss_in, fluss_out, f_t):
+    def __init__(self, name, fluss_in, fluss_out, value, function):
         self.name = name
         self.fluss_in = fluss_in
         self.fluss_out = fluss_out
-        self.f_t = f_t
+        self.value = value
+        self.function = function
 
 class Erzeuger:
-    def __init__(self, name, fluss_in, fluss_out, f_t):
+    def __init__(self, name, fluss_in, fluss_out, value, function):
         self.name = name
         self.fluss_in = fluss_in
         self.fluss_out = fluss_out
-        self.f_t = f_t
+        self.value = value
+        self.function = function
 
 class NetListHandler:
 
@@ -80,8 +86,8 @@ class NetListHandler:
             for item in self.fileLines:
                 f.write("%s\n" % item) 
     
-    def addLineToNetlist(self, name, eFromIndex, eToIndex, value):
-        self.fileLines.append("#" + str(name) + "-" + str(eFromIndex) + "-" + str(eToIndex) + "-" + str(value))
+    def addLineToNetlist(self, name, eFromIndex, eToIndex, value, function):
+        self.fileLines.append("#" + str(name) + "-" + str(eFromIndex) + "-" + str(eToIndex) + "-" + str(value) + "-" + str(function))
 
     def addPotencialLineToNetList(self, name, value):
         self.fileLines.append("#" + str(name) + "-" + str(value))
@@ -109,26 +115,26 @@ class Schaltung:
             
             #Widerstand
             if element[0] == "G":
-                name, fluss_in, fluss_out, value = element.split("-")
-                temp_widerstand = Widerstand(name, int(fluss_in), int(fluss_out), value)
+                name, fluss_in, fluss_out, value, function = element.split("-")
+                temp_widerstand = Widerstand(name, int(fluss_in), int(fluss_out), value, function)
                 self.widerstaende.append(temp_widerstand)
 
             elif element[0] == "C":
-                name, fluss_in, fluss_out, value = element.split("-")
-                temp_transitor = Transistor(name, int(fluss_in), int(fluss_out), value)
+                name, fluss_in, fluss_out, value, function = element.split("-")
+                temp_transitor = Transistor(name, int(fluss_in), int(fluss_out), value, function)
                 self.transitoren.append(temp_transitor)
 
             elif element[0] == "L":
-                name, fluss_in, fluss_out, value = element.split("-")
-                temp_Spule = Spule(name, int(fluss_in), int(fluss_out), value)
+                name, fluss_in, fluss_out, value, function = element.split("-")
+                temp_Spule = Spule(name, int(fluss_in), int(fluss_out), value, function)
                 self.spulen.append(temp_Spule)
             elif element[0] == "V":
-                name, fluss_in, fluss_out, value = element.split("-")
-                temp_vs = V(name, int(fluss_in), int(fluss_out), value)
+                name, fluss_in, fluss_out, value, function = element.split("-")
+                temp_vs = V(name, int(fluss_in), int(fluss_out), value, function)
                 self.vs.append(temp_vs)
             elif element[0] == "I":
-                name, fluss_in, fluss_out, value = element.split("-")
-                temp_erzeuger = Erzeuger(name, int(fluss_in), int(fluss_out), value)
+                name, fluss_in, fluss_out, value, function = element.split("-")
+                temp_erzeuger = Erzeuger(name, int(fluss_in), int(fluss_out), value, function)
                 self.erzeuger.append(temp_erzeuger)
             else:
                 name, value = element.split("-")
@@ -236,10 +242,22 @@ class Schaltung:
         print(self.inzidenz_i)
 
     def getGr(self):
-        return lambda x,t: [50, 50]
+        listOfFunctions = []
+        for widerstand in self.widerstaende:
+            listOfFunctions.append(getattr(functionLib, widerstand.function))
+        return listOfFunctions
 
     def getV_t(self):
-        return lambda t: [50, 50]
+        listOfFunctions = []
+        for v in self.vs:
+            listOfFunctions.append(getattr(functionLib, v.function))
+        return listOfFunctions
+
+    def getI_t(self):
+        listOfFunctions = []
+        for i in self.erzeuger:
+            listOfFunctions.append(getattr(functionLib, i.function))
+        return listOfFunctions
 
 
 

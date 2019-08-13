@@ -34,8 +34,9 @@ class Solver:
         self.inzidenz_l = self.schaltung.inzidenz_l
         self.inzidenz_i = self.schaltung.inzidenz_i
         
-        self.g_r = self.schaltung.getGr()
-        self.v_t = self.schaltung.getV_t()
+        self.gr = self.schaltung.getGr()
+        self.vt = self.schaltung.getV_t()
+        self.it = self.schaltung.getI_t()
 
         
         #Vs löschen
@@ -92,7 +93,6 @@ class Solver:
         #self.w_matrix = np.array([[]])
         print()
         #self.v_matrix = np.array([[1]])
-        input()
 
     def simulate(self):
         """This function starts the simulation. 
@@ -303,6 +303,14 @@ class Solver:
         function2 = np.subtract(minuend1, np.subtract(minuend2, np.subtract(minuend3, minuend4)))
         return function2
 
+    def g_r(self, x, t):
+        ergebnis = []
+        for function in self.gr:
+            ergebnis.append(function(x,t))
+
+        return np.array(ergebnis)
+
+
     def ableitung_c_nachx(self, ec, t):
         #TODO fertig implementieren
         return [[ec[0], 0], [0, ec[1]]]
@@ -335,8 +343,11 @@ class Solver:
         return ergebnis   
 
     def v_t(self, t):
-        #TODO implementieren
-        return t
+        ergebnis = []
+        for function in self.vt:
+            ergebnis.append(function(0,t))
+
+        return np.array(ergebnis)
 
     def i_star(self, t):
         """This function provides a for the simulation nessesary function.
@@ -368,8 +379,11 @@ class Solver:
         return function
 
     def i_s(self,t):
-        #TODO
-        return [t]
+        ergebnis = []
+        for function in self.it:
+            ergebnis.append(function(0,t))
+
+        return np.array(ergebnis)
     
     def i_r(self,t):
         """This function provides a for the simulation nessesary function.
