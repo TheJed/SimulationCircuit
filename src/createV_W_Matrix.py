@@ -160,7 +160,7 @@ def tiefensuche(u_matrix):
             loopList.append(tempTupelList)
             kantenList.append(tempBauteileImLoop)
     w_matrix = buildWMatrix(loopList, kantenList, len(u_matrix[0]), u_matrix)
-    v_matrix = buildVMatrix(fertigeBauteile, len(u_matrix[0]))
+    v_matrix = buildVMatrix(fertigeBauteile, loopList)
     return v_matrix, w_matrix
 
 
@@ -236,11 +236,12 @@ def buildWMatrix(loopList, kantenList, numberOfKanten, u_matrix):
         return np.array([[]])
     return w_matrix
 
-def buildVMatrix(spanningtreeKanten, numberOfKanten):
-    #print(spanningtreeKanten)
-    #print(numberOfKanten)
-    v_matrix = np.zeros((numberOfKanten, len(spanningtreeKanten)))
+def buildVMatrix(spanningtreeKanten, loops):
+
+    v_matrix = np.zeros((len(spanningtreeKanten) + len(loops), len(spanningtreeKanten)))
     for x in range(len(spanningtreeKanten)):
+        print(x)
+        print(spanningtreeKanten[x])
         v_matrix[spanningtreeKanten[x]][x] = 1
     print("V_Matrix:\n", v_matrix)
     return v_matrix

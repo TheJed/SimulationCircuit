@@ -6,6 +6,8 @@ from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import FigureManagerQT as Fig
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+import matplotlib
 
 import PyQt4.QtCore as QtCore
 import pyqtgraph as pg
@@ -22,11 +24,14 @@ import netlistHandler as netHandler
 import controler as controler
 import solver as solv
 import functionLib
-
-
-"""TODO  Einbauen listen Aller Funktionen
+import test
 import inspect 
-all_functions = inspect.getmembers(module, inspect.isfunction)"""
+
+from matplotlib import backend_bases
+# mpl.rcParams['toolbar'] = 'None'
+
+
+
 
 if "win" in sys.platform:
     import ctypes
@@ -37,6 +42,7 @@ class Window(QtGui.QApplication):
     EXIT_CODE_REBOOT = -666
     
     def __init__(self, sys_argv):
+
         
         current_path = os.path.realpath(__file__)
         current_path = current_path.split("\\")
@@ -106,7 +112,7 @@ class Window(QtGui.QApplication):
 
         containerCircuit.setObjectName("containerCircuit")
         containerCircuit.setFixedWidth(width * 0.7)
-        containerCircuit.setFixedHeight(height * 0.45)
+        containerCircuit.setFixedHeight(height * 0.4)
      
         circuitLayout = QtGui.QVBoxLayout(containerCircuit)
 
@@ -114,7 +120,7 @@ class Window(QtGui.QApplication):
         containerInput.setObjectName("containerInput")
         
         containerInput.setFixedWidth(width * 0.25)
-        containerInput.setFixedHeight(height * 0.45)
+        containerInput.setFixedHeight(height * 0.4)
         inputLayout = QtGui.QVBoxLayout(containerInput)
 
         containerUpperLayout = QtGui.QWidget()
@@ -122,6 +128,7 @@ class Window(QtGui.QApplication):
 
         containerLowerLayout = QtGui.QWidget()
         lowerLayout = QtGui.QHBoxLayout(containerLowerLayout)
+        containerLowerLayout.setFixedHeight(height * 0.4)
         
 
         #----------------------------Main-Menue------------------------------#
@@ -132,10 +139,42 @@ class Window(QtGui.QApplication):
         #Layout für die Anzeige des Graphen
 
         # a figure instance to plot on
-        self.creatPlotFigure()
+        """self.creatPlotFigure()
         #graphLayout.addWidget(self.canvas)
         graphLayout.addWidget(self.buttonPlotPotenzial)
-        graphLayout.addWidget(self.pgGraph)
+        graphLayout.addWidget(self.pgGraph)"""
+
+        """backend_bases.NavigationToolbar2.toolitems = (
+            ('Home', 'Reset original view', 'home', 'home'),
+            ('Back', 'Back to  previous view', 'back', 'back'),
+            ('Forward', 'Forward to next view', 'forward', 'forward'),
+            (None, None, None, None),
+            ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
+            (None, None, None, None),
+            ('Save', 'Save the figure', 'filesave', 'save_figure'),
+            )"""
+
+        self.figure = Figure()
+        
+
+        # this is the Canvas Widget that displays the `figure`
+        # it takes the `figure` instance as a parameter to __init__
+        self.canvas = FigureCanvas(self.figure)
+
+        # this is the Navigation widget
+        # it takes the Canvas widget and a parent
+        self.toolbar = NavigationToolbar(self.canvas, containerGraph) 
+        
+        self.buttonPlotPotenzial = QtGui.QPushButton('Plot First Potenzial ')
+        self.buttonPlotPotenzial.clicked.connect(self.plot2)
+        self.buttonPlotPotenzial.setFixedSize(120,20)
+
+        
+        graphLayout.addWidget(self.toolbar)
+        graphLayout.addWidget(self.buttonPlotPotenzial)
+        graphLayout.addWidget(self.canvas)
+        
+
 
 
         #----------------------------Circuit-Layout----------------------------#
@@ -150,6 +189,7 @@ class Window(QtGui.QApplication):
         inputNameLayout = QtGui.QHBoxLayout()
 
         self.createDropDowns()
+        self.createFunctionDropwDowns()
 
         self.componentNameInputLabel = QtGui.QLabel("Name des Bauteils")
 
@@ -215,9 +255,10 @@ class Window(QtGui.QApplication):
         upperLayout.addWidget(containerCircuit)
         
         lowerLayout.addWidget(containerGraph)
+        
 
         mainLayout.addWidget(containerUpperLayout)
-        mainLayout.addWidget(containerLowerLayout)       
+        mainLayout.addWidget(containerLowerLayout)     
 
         self.main_window.setCentralWidget(containerMain)
 
@@ -276,6 +317,35 @@ class Window(QtGui.QApplication):
         mainMenu.setObjectName("mainMenu")
         mainMenu.setStyleSheet("#mainMenu{padding: 3px; border-bottom: 2px solid #0F9BA8; background-color:white}")
         
+    def createFunctionDropwDowns(self):
+        """TODO  Einbauen listen Aller Funktionen"""
+
+        all_functions = inspect.getmembers(functionLib, inspect.isfunction)   
+        print(all_functions)
+
+        c_functions = []
+        i_functions = []
+        r_functions = []
+        v_functions = []
+        l_functions = []
+
+        for functionTupel in all_functions:
+            if "c_" in functionTupel[0]:
+                c_functions.append(functionTupel)
+
+            elif "i_" in functionTupel[0]:
+                i_functions.append(functionTupel)
+            elif "r_" in functionTupel[0]:
+                r_functions.append(functionTupel)
+            elif "v_" in functionTupel[0]:
+                v_functions.append(functionTupel)
+            elif "l_" in functionTupel[0]:
+                l_functions.append(functionTupel)
+
+        print(v_functions)
+
+
+
     def creatPlotFigure(self):
 
         self.figure = Figure()
@@ -287,7 +357,7 @@ class Window(QtGui.QApplication):
         self.pgGraph.setObjectName("graph")
 
 
-        font=QtGui.QFont()
+        """font=QtGui.QFont()
         font.setPixelSize(16)
         plot = self.pgGraph.getPlotItem()
         plot.getAxis("bottom").tickFont = font
@@ -295,7 +365,7 @@ class Window(QtGui.QApplication):
         plot.getAxis("left").tickFont = font
         plot.getAxis("left").setStyle(tickTextOffset = 20)
         self.state = self.pgGraph.saveState()
-        # Just some button connected to `plot` method
+        # Just some button connected to `plot` method"""
         self.buttonPlotPotenzial = QtGui.QPushButton('Plot Potenzial')
         self.buttonPlotPotenzial.clicked.connect(self.plot2)
         self.buttonPlotPotenzial.setFixedSize(100,20)
@@ -559,15 +629,38 @@ class Window(QtGui.QApplication):
         print()
  
     def plot2(self):
+        potenzial = 0
+        x = []
+        y = []
         data = self.controler.getSolutionData()
-        x = data[:,0]
-        y = data[:,1]
-        self.pgGraph.restoreState(self.state)
+        print(data)
+        
+        for entry in data:
+            #print(entry)
+            #input()
+            x.append(entry[0][0][potenzial])
+            y.append(entry[1])
+        #self.pgGraph.restoreState(self.state)
+
         #data = [random.random() for i in range(100)]
-        plotItem = self.pgGraph.getPlotItem()
+        """plotItem = self.pgGraph.getPlotItem()
         plotItem.clear()
         
         plotItem.plot(y, x, pen = pg.mkPen('#0F9BA8', width=3, style=QtCore.Qt.SolidLine) )
+        self.pgGraph.plot(x,y)"""
+
+        ax = self.figure.add_subplot(111)
+        
+
+        # discards the old graph
+        ax.clear()
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Potencial Value")
+        # plot data
+        ax.plot(y,x)
+        self.figure.tight_layout()
+        # refresh canvas
+        self.canvas.draw()
         
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
@@ -586,3 +679,4 @@ if __name__ == '__main__':
     #    a = None
     #    a = QtGui.QApplication(sys.argv)
     #    w = None
+
