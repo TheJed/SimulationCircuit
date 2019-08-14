@@ -244,20 +244,56 @@ class Schaltung:
     def getGr(self):
         listOfFunctions = []
         for widerstand in self.widerstaende:
-            listOfFunctions.append(getattr(functionLib, widerstand.function))
+            functionVector = getattr(functionLib, widerstand.function)()
+            listOfFunctions.append(functionVector[0])
         return listOfFunctions
 
     def getV_t(self):
         listOfFunctions = []
         for v in self.vs:
-            listOfFunctions.append(getattr(functionLib, v.function))
+            functionVector = getattr(functionLib, v.function)()
+            listOfFunctions.append(functionVector[0])
         return listOfFunctions
 
     def getI_t(self):
         listOfFunctions = []
         for i in self.erzeuger:
-            listOfFunctions.append(getattr(functionLib, i.function))
+            functionVector = getattr(functionLib, i.function)()
+            listOfFunctions.append(functionVector[0])
         return listOfFunctions
+
+    def getC_dx(self):
+        listOfFunctions = []
+        
+        
+        for c in self.transitoren:
+            print(getattr(functionLib, c.function)())
+            functionVector = getattr(functionLib, c.function)()
+            listOfFunctions.append(functionVector[1])
+        return listOfFunctions
+
+    def getC_dt(self):
+        listOfFunctions = []
+        for c in self.transitoren:
+            
+            functionVector = getattr(functionLib, c.function)()
+            listOfFunctions.append(functionVector[2])
+        return listOfFunctions
+
+    def getL_dx(self):
+        listOfFunctions = []
+        for l in self.spulen:
+            functionVector = getattr(functionLib, l.function)()
+            listOfFunctions.append(functionVector[1])
+        return listOfFunctions
+
+    def getL_dt(self):
+        listOfFunctions = []
+        for l in self.spulen:
+            functionVector = getattr(functionLib, l.function)()
+            listOfFunctions.append(functionVector[2])
+        return listOfFunctions
+
 
 
 

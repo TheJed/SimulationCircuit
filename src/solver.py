@@ -23,7 +23,14 @@ class Solver:
         self.potencialList = schaltung.potencialList
         print("potenzialliste:", self.potencialList)
         self.jl = 0
-        self.solution = []       
+        self.solution = [] 
+        self.gr = self.schaltung.getGr()
+        self.vt = self.schaltung.getV_t()
+        self.it = self.schaltung.getI_t()
+        self.c_dx = self.schaltung.getC_dx()
+        self.c_dt = self.schaltung.getC_dt()
+        self.l_dx = self.schaltung.getL_dx()
+        self.l_dt = self.schaltung.getL_dt()      
 
     def createInzidenzMatrices(self):
         """This function creates all the reduced Inzidenz-Matrices"""
@@ -33,12 +40,7 @@ class Solver:
         self.inzidenz_r = self.schaltung.inzidenz_g
         self.inzidenz_l = self.schaltung.inzidenz_l
         self.inzidenz_i = self.schaltung.inzidenz_i
-        
-        self.gr = self.schaltung.getGr()
-        self.vt = self.schaltung.getV_t()
-        self.it = self.schaltung.getI_t()
-
-        
+                
         #Vs löschen
         self.c_v = self.findeZusammenhangskomponente(self.inzidenz_v.transpose())
         self.q_v = self.createQArray(self.c_v, self.isMasse(self.inzidenz_v))
@@ -313,19 +315,49 @@ class Solver:
 
     def ableitung_c_nachx(self, ec, t):
         #TODO fertig implementieren
-        return [[ec[0], 0], [0, ec[1]]]
+        #return [[ec[0], 0], [0, ec[1]]]
+        ergebnis = []
+        #for function in self.c_dx:
+        #    ergebnis.append(function(ec,t))
+
+
+        for i in range (len(self.c_dx)):
+            zeile = [0 for k in range(len(self.c_dx))]
+            zeile[i] = self.c_dx[i](ec,t)
+            ergebnis.append(zeile)
+
+        return np.array(ergebnis)
 
     def ableitung_c_nacht(self, ec, t):
         #TODO implementieren Jakpbo MAtrix ( also eignitlich nur die Ableitungen auf den Diagonalen)
-        return ec
+        #return ec
+        ergebnis = []
+        for function in self.c_dt:
+            ergebnis.append(function(ec,t))
+
+        return np.array(ergebnis)
 
     def ableitung_l_nachx(self, x, t):
         #TODO fertig implementieren
-        return [[x]]
+        #return [[x]]
+        ergebnis = []
+        for i in range (len(self.l_dx)):
+            zeile = [0 for k in range(len(self.l_dx))]
+            zeile[i] = self.l_dx[i](x,t)
+            ergebnis.append(zeile)
+
+        return np.array(ergebnis)
 
     def ableitung_l_nacht(self, x, t):
         #TODO fertig implementieren
-        return x
+        #return x
+        ergebnis = []
+        for function in self.l_dt:
+            ergebnis.append(function(x,t))
+
+        return np.array(ergebnis)
+
+        return np.array(ergebnis)
 
     def v_star(self,t):
         """This function provides a for the simulation nessesary function.

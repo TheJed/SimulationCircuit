@@ -1,30 +1,59 @@
-def r_change(params, t):
-    pass
+import numpy as np
 
-def r_constant(params, t):
-    return 40
+#Vektor with Function and Ableitung (nach Variable und Zeit)
+def r_change():
+    function = lambda x, t: 40
+    function_dx = lambda x, t: 40
+    return np.array([function, function_dx])
+        
+def r_constant():
+    function = lambda x, t: 40
+    function_dx = lambda x, t: 40
+    return np.array([function, function_dx])
 
-def c_change(params, t):
-    pass
+def c_change():
+    function = lambda x, t: 20
+    function_dx = lambda x, t: 20
+    function_dt = lambda x, t: 20
+    return np.array([function, function_dx, function_dt])
+    
+def c_constant():
+    function = lambda x, t: 40
+    function_dx = lambda x, t: 40
+    function_dt = lambda x, t: 40
+    return np.array([function, function_dx, function_dt])
 
-def c_constant(params, t):
-    return 20
+def l_change():
+    function = lambda x, t: 20
+    function_dx = lambda x, t: 20
+    function_dt = lambda x, t: 20
+    return np.array([function, function_dx, function_dt])
 
-def l_change(params, t):
-    pass
+def l_constant():
+    function = lambda x, t: 20
+    function_dx = lambda x, t: 20
+    function_dt = lambda x, t: 20
+    return np.array([function, function_dx, function_dt])
 
-def l_constant(params, t):
-    return 30
+def i_change():
+    function = lambda x, t: 40
+    function_dx = lambda x, t: 40
+    return np.array([function, function_dx])
+        
+def i_constant():
+    function = lambda x, t: 40
+    function_dx = lambda x, t: 40
+    return np.array([function, function_dx])
 
-def i_change(params, t):
-    pass
+    
+def v_change():
+    function = lambda x, t: 40
+    function_dx = lambda x, t: 40
+    return np.array([function, function_dx])
+        
+def v_constant():
+    function = lambda x, t: 40
+    function_dx = lambda x, t: 40
+    return np.array([function, function_dx])
 
-def i_constant(params, t):
-    return 40
-
-def v_change(params, t):
-    pass
-
-def v_constant(params, t):
-    return 30
 

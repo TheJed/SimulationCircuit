@@ -593,7 +593,7 @@ class Window(QtGui.QApplication):
         component = (str(self.componentDropwDown.currentText()))
         function = "0"
 
-        if component == "Kondesator":
+        if component == "Kondensator":
             function = self.function_c_DropwDown.currentText()
 
         if component == "Stromquelle":
@@ -606,7 +606,7 @@ class Window(QtGui.QApplication):
             function = self.function_v_DropwDown.currentText()
 
         if component == "Spule":
-            function = self.function_c_DropwDown.currentText()
+            function = self.function_l_DropwDown.currentText()
 
         direction = (str(self.directionDropwDown.currentText()))
         name = (str(self.componentNameInput.text()))
