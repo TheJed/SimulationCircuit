@@ -71,19 +71,10 @@ class NetListHandler:
         return(result)
 
     def writeFile(self, filename, potenzialNummer):
-        print("Hi")
-        for i in range(0, len(self.fileLines)-1):
-            k = self.fileLines[i].split("-")
-            print(k)
-            if k[0] == -10:
-                k[0] = potenzialNummer
-                print("K1")
-            if k[1] == -10:
-                k[1] = potenzialNummer
-                print("K2")
 
         with open(filename, 'w') as f:
             for item in self.fileLines:
+                
                 f.write("%s\n" % item) 
     
     def addLineToNetlist(self, name, eFromIndex, eToIndex, value, function):
@@ -154,8 +145,11 @@ class Schaltung:
         
         maxPotenzialNr = self.potenzialNumber
         masseknoten = 0
+        #masseknoten = self.potenzialNumber-1
         #Transitoren
-        self.inzidenz_c = [[0 for x in range(maxPotenzialNr)] for y in range(len(self.transitoren))]
+
+        self.inzidenz_c = np.zeros((len(self.transitoren), maxPotenzialNr))
+        print(self.inzidenz_c)
 
         for i in range(len(self.transitoren)):
             transistor = self.transitoren[i]
@@ -165,7 +159,7 @@ class Schaltung:
 
         
         #Widerstaende
-        self.inzidenz_g = [[0 for x in range(maxPotenzialNr)] for y in range(len(self.widerstaende))]
+        self.inzidenz_g = np.zeros((len(self.widerstaende), maxPotenzialNr))
 
         print(self.widerstaende)
         for i in range(len(self.widerstaende)):
@@ -177,7 +171,7 @@ class Schaltung:
 
 
         #Spulen
-        self.inzidenz_l = [[0 for x in range(maxPotenzialNr)] for y in range(len(self.spulen))]
+        self.inzidenz_l = np.zeros((len(self.spulen), maxPotenzialNr))
         for i in range(len(self.spulen)):
             spule = self.spulen[i]
             
@@ -187,7 +181,7 @@ class Schaltung:
 
 
         #Vs
-        self.inzidenz_v = [[0 for x in range(maxPotenzialNr)] for y in range(len(self.vs))]
+        self.inzidenz_v = np.zeros((len(self.vs), maxPotenzialNr))
 
         for i in range(len(self.vs)):
             v = self.vs[i]
@@ -196,7 +190,7 @@ class Schaltung:
             self.inzidenz_v[i][v.fluss_out] = -1
 
 
-        self.inzidenz_i = [[0 for x in range(maxPotenzialNr)] for y in range(len(self.erzeuger))]
+        self.inzidenz_i = np.zeros((len(self.erzeuger), maxPotenzialNr))
 
         for i in range(len(self.erzeuger)):
             erzeug = self.erzeuger[i]
@@ -204,26 +198,26 @@ class Schaltung:
             self.inzidenz_i[i][erzeug.fluss_in] = 1
             self.inzidenz_i[i][erzeug.fluss_out] = -1
 
-        self.inzidenz_c = np.array(self.inzidenz_c)
-        if(len(self.inzidenz_c) != 0):
-            print(self.inzidenz_c)
-            self.inzidenz_c = np.delete(self.inzidenz_c, masseknoten, 1).transpose()
+        #self.inzidenz_c = np.array(self.inzidenz_c)
+        #if(len(self.inzidenz_c) != 0):
+        #    print(self.inzidenz_c)
+        self.inzidenz_c = np.delete(self.inzidenz_c, masseknoten, 1).transpose()
 
-        self.inzidenz_g = np.array(self.inzidenz_g)
-        if(len(self.inzidenz_g) != 0):
-            self.inzidenz_g = np.delete(self.inzidenz_g, masseknoten, 1).transpose()
+        #self.inzidenz_g = np.array(self.inzidenz_g)
+        #if(len(self.inzidenz_g) != 0):
+        self.inzidenz_g = np.delete(self.inzidenz_g, masseknoten, 1).transpose()
 
-        self.inzidenz_i = np.array(self.inzidenz_i)
-        if(len(self.inzidenz_i) != 0):
-            self.inzidenz_i = np.delete(self.inzidenz_i, masseknoten, 1).transpose()
+        #self.inzidenz_i = np.array(self.inzidenz_i)
+        #if(len(self.inzidenz_i) != 0):
+        self.inzidenz_i = np.delete(self.inzidenz_i, masseknoten, 1).transpose()
 
-        self.inzidenz_l = np.array(self.inzidenz_l)
-        if(len(self.inzidenz_l) != 0):
-            self.inzidenz_l = np.delete(self.inzidenz_l, masseknoten, 1).transpose()
+        #self.inzidenz_l = np.array(self.inzidenz_l)
+        #if(len(self.inzidenz_l) != 0):
+        self.inzidenz_l = np.delete(self.inzidenz_l, masseknoten, 1).transpose()
 
-        self.inzidenz_v = np.array(self.inzidenz_v)
-        if(len(self.inzidenz_v) != 0):
-            self.inzidenz_v = np.delete(self.inzidenz_v, masseknoten, 1).transpose()
+        #self.inzidenz_v = np.array(self.inzidenz_v)
+        #if(len(self.inzidenz_v) != 0):
+        self.inzidenz_v = np.delete(self.inzidenz_v, masseknoten, 1).transpose()
 
         
         print("Transistoren")
@@ -293,6 +287,17 @@ class Schaltung:
             functionVector = getattr(functionLib, l.function)()
             listOfFunctions.append(functionVector[2])
         return listOfFunctions
+
+    def getjl(self):
+        if not self.spulen:
+            return np.zeros((0,1))
+
+        else:
+            jl = []
+            for x in self.spulen:
+                jl.append(float(x.value))
+            return np.array(jl)
+
 
 
 

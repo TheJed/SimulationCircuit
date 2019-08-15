@@ -22,7 +22,7 @@ class Solver:
         self.schaltung = schaltung
         self.potencialList = schaltung.potencialList
         print("potenzialliste:", self.potencialList)
-        self.jl = 0
+        self.jl = self.schaltung.getjl()
         self.solution = [] 
         self.gr = self.schaltung.getGr()
         self.vt = self.schaltung.getV_t()
@@ -40,23 +40,33 @@ class Solver:
         self.inzidenz_r = self.schaltung.inzidenz_g
         self.inzidenz_l = self.schaltung.inzidenz_l
         self.inzidenz_i = self.schaltung.inzidenz_i
+
                 
         #Vs löschen
         self.c_v = self.findeZusammenhangskomponente(self.inzidenz_v.transpose())
         self.q_v = self.createQArray(self.c_v, self.isMasse(self.inzidenz_v))
         self.p_v = self.createPArray(self.c_v, self.isMasse(self.inzidenz_v))
+        #self.p_v = np.array([0,0,0,0])
 
         #Delete V_sources
-        self.ac_v = np.dot(self.q_v.transpose(), (self.inzidenz_c))
+        self.ac_v = self.inzidenz_c
+        if not 0 in self.inzidenz_c.shape:  
+            self.ac_v = np.dot(self.q_v.transpose(), (self.inzidenz_c))
         print("Ac_v: \n", self.ac_v)
 
-        self.al_v = np.dot(self.q_v.transpose(), self.inzidenz_l)
+        self.al_v = self.inzidenz_l
+        if not 0 in self.inzidenz_l.shape:  
+            self.al_v = np.dot(self.q_v.transpose(), self.inzidenz_l)
         print("Al_v: \n", self.al_v)
 
-        self.ar_v = np.dot(np.transpose(self.q_v), self.inzidenz_r)
+        self.ar_v = self.i_r
+        if not 0 in self.inzidenz_r.shape:  
+            self.ar_v = np.dot(np.transpose(self.q_v), self.inzidenz_r)
         print("Ar_v: \n", self.ar_v)
 
-        self.ai_v = np.dot(self.q_v.transpose(), (self.inzidenz_i))
+        self.ai_v = self.inzidenz_i
+        if not 0 in self.inzidenz_i.shape:  
+            self.ai_v = np.dot(self.q_v.transpose(), (self.inzidenz_i))
         print("ai_v;", self.ai_v)
 
         #Kondesatoren
@@ -64,14 +74,21 @@ class Solver:
         self.q_c = self.createQArray(self.c_c, self.isMasse(self.ac_v))
         self.p_c = self.createPArray(self.c_c, self.isMasse(self.ac_v))
 
-        #Delete Kondensators    
-        self.al_vc = np.dot(self.q_c.transpose(), self.al_v)
+        #Delete Kondensators
+
+        self.al_vc = self.inzidenz_l
+        if not 0 in self.inzidenz_l.shape:   
+            self.al_vc = np.dot(self.q_c.transpose(), self.al_v)
         print("Al_cv: \n", self.al_vc)
 
-        self.ai_vc = np.dot(self.q_c.transpose(), self.ai_v)
+        self.ai_vc = self.inzidenz_i
+        if not 0 in self.inzidenz_i.shape:  
+            self.ai_vc = np.dot(self.q_c.transpose(), self.ai_v)
         print("Ai_vc:", self.ai_vc)
 
-        self.ar_vc = np.dot(self.q_c.transpose(), self.ar_v)
+        self.ar_vc = self.inzidenz_r
+        if not 0 in self.inzidenz_r.shape:  
+            self.ar_vc = np.dot(self.q_c.transpose(), self.ar_v)
         print("Ar_vc: \n", self.ar_vc)
 
         #Resistors
@@ -79,18 +96,25 @@ class Solver:
         self.q_r = self.createQArray(self.c_r, self.isMasse(self.ar_vc))
         self.p_r = self.createPArray(self.c_r, self.isMasse(self.ar_vc))
 
-        #Delete Resistances   
-        self.al_vcr = np.dot(self.q_r.transpose(), self.al_vc)
+        #Delete Resistances 
+
+        self.al_vcr = self.inzidenz_l
+        if not 0 in self.inzidenz_l.shape:  
+            self.al_vcr = np.dot(self.q_r.transpose(), self.al_vc)
         print("Al_vcr: \n", self.al_vcr)
 
-        #tempMatrix = self.q_r.transpose().dot(tempMatrix)
-        self.ai_vcr = np.dot(self.q_r.transpose(), self.ai_vc)
+        self.ai_vcr = self.inzidenz_i
+        if not 0 in self.inzidenz_i.shape:  
+            self.ai_vcr = np.dot(self.q_r.transpose(), self.ai_vc)
         print("Ai_vcr: \n", self.ai_vcr)
 
         #self.ail_vcr = np.concatenate((np.array(self.al_vcr),np.array(self.ai_vcr)),axis=1)
         #print("ail_vcr:", self.ail_vcr)
 
-        self.v_matrix, self.w_matrix = createV_W_Matrix.tiefensuche(self.al_vcr)
+        self.v_matrix = np.array([])
+        self.w_matrix = np.array([])
+        if not 0 in self.inzidenz_l.shape:
+            self.v_matrix, self.w_matrix = createV_W_Matrix.tiefensuche(self.al_vcr)
         #TODO berechnen neu wegen Beispiel. hier Fehler
         #self.w_matrix = np.array([[]])
         print()
@@ -115,17 +139,40 @@ class Solver:
         #TODO eigentlich Vektor und kein Skalar
         #ec = [2]
         #e_r = [0,0]
-        j_li = [0]
+        j_li = self.j_li(self.jl)
         #x = ec
         t = 10
-
         #self.solve(ec, j_li)
         #self.e_r = [0,0]
-        print("ec:", self.ec)
-        x = np.concatenate((self.ec, j_li), axis=0)
+
         t = np.arange(0, 10, 1.0)
-        print("x_start:", x)
+        #print("x_start:", x)
         print("T:", t)
+
+        print("ec:", self.ec)
+        if 0 in self.ec.shape and not 0 in j_li.shape:
+            x = []
+            for i in j_li.tolist():
+                x.append(i[0])
+            y = odeint(self.cgSolve, x, t)
+        elif not 0 in self.ec.shape and 0 in j_li.shape:
+            x = []
+            for i in self.ec.tolist():
+                x.append(i[0])
+            y = odeint(self.cgSolve, x, t)
+        elif 0 in self.ec.shape and 0 in j_li.shape:
+            x = np.array([0])
+            for x in t:
+                self.newton2(x)
+        else:   
+            x = []
+            for i in self.ec.tolist():
+                x.append(i[0])
+            for i in j_li.tolist():
+                x.append(i[0])
+            y = odeint(self.cgSolve, x, t)
+            #x = np.concatenate((self.ec, j_li), axis=0)
+        
 
         """r = ode(self.cgSolve).set_integrator('zvode', method='bdf', with_jacobian=False)
         r.set_initial_value(x, 0)
@@ -134,7 +181,7 @@ class Solver:
         while r.successful() and r.t < t1:
             r.integrate(r.t+dt)
             print("%g %g" % (r.t, r.y))"""
-        y = odeint(self.cgSolve, x, t)
+        #y = odeint(self.cgSolve, x, t)
 
         
         #print(y)
@@ -153,11 +200,13 @@ class Solver:
         parameters = np.dot(np.transpose(self.ar_vc), self.p_r)
 
         funktionPart_1 = np.dot(funktionPart_1, self.gr_not_vc(np.dot(parameters, e_r), ec, t))
-        functionPart_2 = np.dot(np.transpose(self.p_r), self.al_vc)
+        functionPart_2 = 0
+        if not 0 in self.inzidenz_l.shape:
+            functionPart_2 = np.dot(np.transpose(self.p_r), self.al_vc)
 
-        qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
+            qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
 
-        functionPart_2 = np.dot(functionPart_2, qliJl_i)
+            functionPart_2 = np.dot(functionPart_2, qliJl_i)
 
         return np.add(np.add(funktionPart_1,functionPart_2),self.i_r(t))
 
@@ -170,7 +219,7 @@ class Solver:
         :return: Returns the builded function.
         :rtype: function."""
         
-        if not (self.ar_v).tolist() or not (self.p_c).tolist():
+        if 0 in self.ar_v.shape or 0 in self.p_c.shape:
             parameter1 = 0
         else:
             
@@ -178,7 +227,7 @@ class Solver:
             
             parameter1= parameter1.dot(ec)
 
-        if not self.inzidenz_r.tolist() or not self.p_v.tolist() or not self.inzidenz_v.tolist():
+        if 0 in self.inzidenz_r.shape or 0 in self.p_v.shape or not self.inzidenz_v.shape:
             parameter3 = 0
         else:
             parameter2 = np.dot(np.transpose(self.inzidenz_r), self.p_v)
@@ -224,6 +273,8 @@ class Solver:
         :return: Returns the builded matrix.
         :rtype: numpy.array"""
         
+        if 0 in self.p_c.shape or 0 in self.ac_v.shape:
+            return np.array([])
         matrix = np.dot(np.transpose(self.p_c), self.ac_v)
         parameter = np.dot(np.transpose(self.ac_v), self.p_c)
         parameter = np.dot(parameter, ec)
@@ -272,16 +323,22 @@ class Solver:
         
         :return: Returns the builded function.
         :rtype: function."""
-        summand1 = self.p_c.transpose().dot(self.ac_v)
-        parameter = np.transpose(self.ac_v).dot(self.p_c).dot(ec)
-        summand1 = summand1.dot(self.ableitung_c_nacht(parameter, t))
+        summand1 = 0
+        if not 0 in self.ac_v.shape:
+            summand1 = self.p_c.transpose().dot(self.ac_v)
+            parameter = np.transpose(self.ac_v).dot(self.p_c).dot(ec)
+            summand1 = summand1.dot(self.ableitung_c_nacht(parameter, t))
         
-        qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
-        summand2 = self.p_c.transpose().dot(self.al_v).dot(qliJl_i)
+        summand2 = 0
+        if not 0 in self.al_v.shape:
+            qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
+            summand2 = self.p_c.transpose().dot(self.al_v).dot(qliJl_i)
 
-        parameter2 = self.ar_vc.transpose().dot(self.p_r).dot(e_r)
-        #TODO das np.array wegnehmen
-        summand3 = self.p_c.transpose().dot(self.ar_v).dot(self.gr_not_vc(parameter2, np.array(ec), t))
+        summand3 = 0
+        if not 0 in self.ar_vc.shape:
+            parameter2 = self.ar_vc.transpose().dot(self.p_r).dot(e_r)
+            #TODO das np.array wegnehmen
+            summand3 = self.p_c.transpose().dot(self.ar_v).dot(self.gr_not_vc(parameter2, np.array(ec), t))
 
         summand4 = self.i_c(t)
 
@@ -297,18 +354,23 @@ class Solver:
        
         qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
         
+
         minuend1 = np.transpose(self.w_matrix).dot(self.ableitung_l_nacht(qliJl_i, t))
-        minuend2 = np.transpose(self.w_matrix).dot(np.transpose(self.al_v)).dot(self.p_c).dot(ec)
-        minuend3 = np.transpose(self.w_matrix).dot(np.transpose(self.al_vc)).dot(self.p_r).dot(e_r)
-        minuend4 = self.v_l(t)
+        minuend2 = 0
+        minuend3 = 0
+        minuend4 = 0
+        if not 0 in self.al_v.shape:
+            minuend2 = np.transpose(self.w_matrix).dot(np.transpose(self.al_v)).dot(self.p_c).dot(ec)
+            minuend3 = np.transpose(self.w_matrix).dot(np.transpose(self.al_vc)).dot(self.p_r).dot(e_r)
+            minuend4 = self.v_l(t)
 
         function2 = np.subtract(minuend1, np.subtract(minuend2, np.subtract(minuend3, minuend4)))
         return function2
 
     def g_r(self, x, t):
         ergebnis = []
-        for function in self.gr:
-            ergebnis.append(function(x,t))
+        for i in range(len(self.gr)):
+            ergebnis.append(self.gr[i](x[i],t))
 
         return np.array(ergebnis)
 
@@ -357,7 +419,6 @@ class Solver:
 
         return np.array(ergebnis)
 
-        return np.array(ergebnis)
 
     def v_star(self,t):
         """This function provides a for the simulation nessesary function.
@@ -368,7 +429,7 @@ class Solver:
         :rtype: function."""
 
         if not (self.inzidenz_v):
-            return 0
+            return np.zeros((self.p_v.shape))
 
         matrixA = np.dot(np.transpose(self.inzidenz_v), self.p_v)
         ergebnis = linalgSolver.cg(matrixA,self.v_t(t))
@@ -390,6 +451,8 @@ class Solver:
         :rtype: function."""
         #TODO
 
+        if 0 in self.inzidenz_l.shape:
+            return 0
         matrixA = np.dot(self.al_vcr,self.v_matrix)
 
         vektorB = np.dot(np.dot(self.ai_vcr,-1), self.i_s(t))
@@ -404,16 +467,21 @@ class Solver:
         
         :return: Returns the builded function.
         :rtype: function."""
-         #TODO fertig implementieren. VL wird berechnet aus anderen sachen !!!!
-        summand1 = self.p_c.transpose().dot(self.ai_v).dot(self.i_s(t))
-        summand2 = self.p_c.transpose().dot(self.al_v).dot(self.v_matrix).dot(self.i_star(t))
+        #TODO fertig implementieren. VL wird berechnet aus anderen sachen !!!!
+        summand1 = 0
+        if not 0 in self.ai_v.shape and not 0 in self.p_c:
+            summand1 = self.p_c.transpose().dot(self.ai_v).dot(self.i_s(t))
+
+        summand2 = 0
+        if not 0 in self.al_v.shape:
+            summand2 = self.p_c.transpose().dot(self.al_v).dot(self.v_matrix).dot(self.i_star(t))
         function = np.add(summand1, summand2)
         return function
 
     def i_s(self,t):
         ergebnis = []
         for function in self.it:
-            ergebnis.append(function(0,t))
+            ergebnis.append(function(t))
 
         return np.array(ergebnis)
     
@@ -427,8 +495,12 @@ class Solver:
          #TODO fertig implementieren. VL wird berechnet aus anderen sachen !!!!
         print()
         
-        summand1 = self.p_r.transpose().dot(self.ai_vc).dot(self.i_s(t))
-        summand2 = self.p_r.transpose().dot(self.al_vc).dot(self.v_matrix).dot(self.i_star(t))
+        summand1 = 0
+        summand2 = 0
+        if not 0 in self.inzidenz_i.shape:
+            summand1 = self.p_r.transpose().dot(self.ai_vc).dot(self.i_s(t))
+            if not 0 in self.inzidenz_l.shape:
+                summand2 = self.p_r.transpose().dot(self.al_vc).dot(self.v_matrix).dot(self.i_star(t))
         ergebnis = np.add(summand1,summand2)
         return ergebnis
 
@@ -446,28 +518,55 @@ class Solver:
         :return: Returns calculated e_l value.
         :rtype: vector."""
 
-        m = self.v_matrix.transpose().dot(self.al_vcr.transpose())
-        minuend1 = self.v_matrix.transpose().dot(self.ableitung_l_nacht(self.w_matrix, t))
-        minuend2 = m.dot(self.al_v.transpose()).dot(self.p_c).dot(e_c)
-        minuend3 = m.dot(self.al_vc.transpose()).dot(self.p_r).dot(e_r)
-        minuend4 = m.dot(self.inzidenz_l.transpose()).dot(self.p_v).dot(self.v_star(t))
+        m = np.array([])
+        minuend1 = 0
+        minuend2 = 0
+        minuend3 = 0
+        minuend4 = 0
 
-        if 0 in minuend1.shape and not 0 in minuend2.shape:
-            b = minuend2
-        elif 0 in minuend2.shape and not 0 in minuend1.shape:
-            b = minuend1
-        elif 0 in minuend1.shape and 0 in minuend2.shape:
-            b = []
-        else:
+        #Leeres Transponieren??
+        if not 0 in self.inzidenz_l.shape and not 0 in self.v_matrix:
+            m = self.v_matrix.transpose().dot(self.al_vcr.transpose())
+            if not 0 in self.p_c.shape:
+                minuend2 = m.dot(self.al_v.transpose()).dot(self.p_c).dot(e_c)
+            if not 0 in self.p_r.shape:
+                minuend3 = m.dot(self.al_vc.transpose()).dot(self.p_r).dot(e_r)
+            if not 0 in self.p_v.shape:
+                minuend4 = m.dot(self.inzidenz_l.transpose()).dot(self.p_v).dot(self.v_star(t))
+            minuend1 = self.v_matrix.transpose().dot(self.ableitung_l_nacht(self.w_matrix, t))
+
+
+            #if minuend1 == 0 and not 0 in minuend2.shape:
+            #    b = minuend2
+            #elif 0 in minuend2.shape and not 0 in minuend1.shape:
+            #    b = minuend1
+            #elif 0 in minuend1.shape and 0 in minuend2.shape:
+            #    b = []
+            #else:
             b = np.subtract(minuend1, minuend2)
-        if not 0 in minuend3.shape:    
+            #if not 0 in minuend3.shape:    
             b = np.subtract(b, minuend3)
-        if not 0 in minuend4.shape:
+            #if not 0 in minuend4.shape:
             b = np.subtract(b, minuend4)
 
-        e_l = linalgSolver.cg(m,b)[0]
+            
+            e_l = linalgSolver.cg(m,b)[0]
 
-        return e_l
+            return e_l
+
+        return 0
+
+    def j_li(self, t):
+
+        if 0 in self.inzidenz_l.shape:
+            return np.zeros((1,0))
+        if 0 in self.w_matrix.shape:
+            return np.zeros((self.jl.shape[0], 1))
+        b = self.jl - self.v_matrix.dot(self.i_star(t))
+        m = self.w_matrix
+
+        e = LA.solve(m,b)
+        return e
 
     #TODO ungeklärt
     def startwertEntkopplung(self, e, t):
@@ -488,11 +587,14 @@ class Solver:
 
         m = np.concatenate((self.p_c, self.q_c), axis= 1)
         temp = LA.solve(m,self.e_v)
-        self.ec = []
+        if self.p_c.shape[1] == 0:
+            self.ec = np.zeros((self.p_c.shape))
+        else:
+            self.ec = np.zeros((self.p_c.shape[1], 1))
         self.e_c = []
         for i in range(len(temp)):
             if i<self.p_c.shape[1]:
-                self.ec.append(temp[i])
+                self.ec[i] = (temp[i])
             else:
                 self.e_c.append(temp[i])
 
@@ -506,6 +608,14 @@ class Solver:
                 self.er.append(temp[i])
             else:
                 el.append(temp[i])  
+
+        print(self.ec)
+        #Teste:
+        #PV eV 􀀀 QV PCeC 􀀀 QV QCPReR 􀀀 QV QCQReL
+        #k = self.p_v.dot(self.v_star(0)) + self.q_v.dot(self.p_c).dot(self.e_c) + self.q_v.dot(self.q_c).dot(self.p_r).dot(self.er)
+        #k = k + self.q_v.dot(self.q_c).dot(self.q_r).dot(el)
+
+        
      
     def zurueckcoppler(self, ec, er, t):
         
@@ -515,25 +625,30 @@ class Solver:
         if type(er) is np.float64:
             er = [er]
 
-        summand1 = self.p_v.dot(self.v_star(t))
-        if 0 in summand1.shape:
-            summand1 = 0
-        summand2 = self.q_v.dot(self.p_c).dot(ec)
-        if 0 in summand2.shape:
-            summand2 = 0
-        summand3 = self.q_v.dot(self.q_c).dot(self.p_r).dot(er)
-        if 0 in summand3.shape:
-            summand3 = 0
-        summand4 = self.q_v.dot(self.q_c).dot(self.q_r).dot(self.e_l(ec,er,t))
-        if 0 in summand4.shape:
-            summand4 = 0
+        summand1 = 0
+        if not 0 in self.p_v.shape:
+            summand1 = self.p_v.dot(self.v_star(t))
+
+        summand2 = 0
+        if not 0 in self.q_v.shape and 0 not in self.p_c.shape:
+            summand2 = self.q_v.dot(self.p_c).dot(ec)
+
+        summand3 = 0
+        
+        if not 0 in self.q_c.shape and 0 not in self.p_r.shape and 0 not in self.q_v.shape:
+            summand3 = self.q_v.dot(self.q_c).dot(self.p_r).dot(er)
+
+        summand4 = 0
+        
+        if 0 not in self.q_v.shape and 0 not in self.q_c.shape and 0 not in self.q_r.shape and not 0 in self.inzidenz_l.shape:
+            summand4 = self.q_v.dot(self.q_c).dot(self.q_r).dot(self.e_l(ec,er,t))
 
         e = summand1 + summand2 + summand3 + summand4
         print(e)
         return e
 
     def isMasse(self, inzidenz):
-        if(len(inzidenz) == 0):
+        if 0 in inzidenz.shape:
             return False
         unique, count = np.unique(inzidenz, return_counts=True)
 
@@ -541,7 +656,7 @@ class Solver:
         if(len(count) == 1):
             #print("nur ein spezialfall")
             return True
-        if(count[0] == count[2]):
+        if(count[0] == count[-1]):
             #print("False")
             return False
         else:
@@ -591,9 +706,10 @@ class Solver:
         if(isMasse):
             if(len(c_x) == 1 and c_x[0] == 1):
                 print([])
-                return np.array([])
+                return np.array([[1]])
             #qArray = np.zeros((sum(c_x), self.schaltung.potenzialNumber-1))
-            qArray = np.zeros((sum(c_x), len(c_x) + 1))
+            #qArray = np.zeros((sum(c_x), len(c_x) + 1))
+            qArray = np.zeros((sum(c_x), len(c_x)))
             
         else:
             #eigentlich - 2
@@ -610,7 +726,7 @@ class Solver:
         print(qArray)
         return qArray
     
-    def createPArray(self, c_x, isMasse):
+    def createPArray2(self, c_x, isMasse):
         
         #Bestimmme Groesse:
         rows = 0
@@ -657,36 +773,144 @@ class Solver:
         print(pArray)
         return pArray
 
-    def cgSolve(self, x, t):
+    def createPArray(self, c_x, isMasse):
 
-        ec = []
+        rows = 0
+        columns = 0
+        for x in c_x:
+            columns = columns + x-1
+            rows += x-1 + 1
+        #if isMasse:
+        #    rows += 1
+        #    columns = columns + 1
+
+        dimension = (rows, columns)
+        pArray = np.zeros(dimension)
+
+        c_x1 = [value-1 for value in c_x]
+        spalte = 0
+        zeile = 0
+        for x in c_x1:
+
+            i = x
+            while i > 0:
+                pArray[zeile][spalte] = 1
+                i = i -1
+                spalte+= 1
+                zeile += 1
+
+            zeile += 1
+
+
+        #Wenn einer der Componenten an der Masse anliegt, muss die Matrix noch erweitert werden
+        #if(isMasse):
+         #   if(len(c_x) == 1 and c_x[0] == 1):
+          #      print([1])
+           #     return np.array([1])
+            #pArray[len(pArray)-1][len(pArray[0])-1] = 1
+                
+        print("P-Array:")
+        print(pArray)
+        return pArray
+
+
+
+    def cgSolve(self, x, t):
+      
+        #TODO rausnehmen und für shorty 2 also nur widerstaende simulationohne ode machen
+        no_x = False
         j_li = []
-        for i in range(len(x)):
-            if i<len(self.ec):
-                ec.append(x[i])
-            else:
-                j_li.append(x[i])        
-        m = self.matrix(ec, j_li, t)
+        if x[0] == 0:
+            ec = self.ec
+            no_x = True
+        else:
+            ec = []
+            
+
+            for i in range(len(x)):
+                if i<len(self.ec):
+                    ec.append(x[i])
+                else:
+                    j_li.append(x[i])        
+        #m = self.matrix(ec, j_li, t)
         #print("M:", m.tolist())
         e_r = self.newton(ec, t)
-        b = self.function(ec, j_li , e_r , t)
-        x = linalgSolver.cg(m,b)
-        print("new x:", x)
-        x = x[0]
+        #b = self.function(ec, j_li , e_r , t)
+
+        if not 0 in self.inzidenz_c.shape:
+            mc = self.matrix_mc(ec, t)
+            if not 0 in mc.shape:
+                ec = linalgSolver.cg(mc, self.function1(ec, j_li, e_r, t))[0]
+
+        if not 0 in self.inzidenz_l.shape:
+            ml = self.matrix_ml(j_li, t)
+            if not 0 in ml.shape:
+                j_li = linalgSolver.cg(ml, self.function2(ec, j_li, e_r, t))[0]
+
+        e = self.zurueckcoppler(ec, e_r, t)
+        self.solution.append(([e], t))
+
+        if not type(ec) == list:
+            ec = ec.tolist()
+        if not type(j_li) == list:
+            j_li = j_li.tolist()
+        
+
+        if no_x:
+            return x
+        x_new = ec
+        for i in j_li:
+            x_new.append(i)
+        return x_new
+
+        #Falsche, neue Idee
+        """if m.shape == (0,0):
+            if not 0 in b.shape:
+                x = b
+            #e = self.zurueckcoppler(x, e_r, t)
+            e = self.zurueckcoppler(x[0], e_r, t)
+            self.solution.append(([e], t))
+            return x
+               
+            
+        else:
+            x = linalgSolver.cg(m,b)
+            print("new x:", x)
+            x = x[0]
+            e = self.zurueckcoppler(x[0], e_r, t)
+            self.solution.append(([e], t))
+            return [x, 0]
         #input()
         #e = np.array(LA.solve(m,b))[0]
         #print("Ergebnis der Simulation:", x)
-        #self.solution.append([x, self.er, t])
-        e = self.zurueckcoppler(x[0], e_r, t)
+        #self.solution.append([x, self.er, t])"""
+       
         
-        self.solution.append(([e], t))
+        
         #TODO hier fix für zweiten Parameter, wenn einer leer ist
-        return [x, 0]
+        
 
     def newton(self,ec, t):
         
+        if 0 in self.inzidenz_r.shape:
+            return self.er
         f = lambda e_r: self.g_xyt(ec,e_r,t)
+        if type(self.er) == list:
+            if len(self.er) == 1:
+                self.er = self.er[0]
         #print("Hiiii", optimize.newton(f, self.e_r,tol=1e-10, maxiter=50000, full_output=True))
         self.er = optimize.newton(f, self.er,tol=1e-10, maxiter=50000, disp=False)
         return self.er
         
+    def newton2(self, t):
+        if 0 in self.inzidenz_r.shape:
+            return self.er
+        f = lambda e_r: self.g_xyt(self.ec,e_r,t)
+        if type(self.er) == list:
+            if len(self.er) == 1:
+                self.er = self.er[0]
+        #print("Hiiii", optimize.newton(f, self.e_r,tol=1e-10, maxiter=50000, full_output=True))
+        self.er = optimize.newton(f, self.er,tol=1e-10, maxiter=50000, disp=False)
+        e = self.zurueckcoppler(self.ec, self.er, t)
+        self.solution.append(([e], t))
+        return self.er

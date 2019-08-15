@@ -11,7 +11,7 @@ import netlistHandler as netHandler
 
 class CircuitDrawing():
 
-    def __init__(self):
+    def __init__(self,choosen):
 
         current_path = os.path.realpath(__file__)
         current_path = current_path.split("\\")
@@ -35,14 +35,13 @@ class CircuitDrawing():
 
         self.wasFullyConnectedBeforeUndo = []
         
-        
-        i1 = self.circuitDrawing.add(e.SOURCE_I, label="I1", d="left", reverse = True)
-        self.potenzialList.append(self.circuitDrawing.add(e.DOT, label = "E_Masse", xy = i1.end ))
-        self.potenzialList.append(self.circuitDrawing.add(e.DOT, label = "E0", xy = i1.start))
+        if choosen == 0:
+            k = self.circuitDrawing.add(e.SOURCE_I, label="I1", d="left", reverse = True)
+        else:
+            k = self.circuitDrawing.add(e.SOURCE_V, label="V1", d="left", reverse = True)
+        self.potenzialList.append(self.circuitDrawing.add(e.DOT, label = "E_Masse", xy = k.end ))
+        self.potenzialList.append(self.circuitDrawing.add(e.DOT, label = "E0", xy = k.start))
 
-        
-
-        
     
 
     def addComponent(self, component, direction, name, eFromIndex, eToIndex):
