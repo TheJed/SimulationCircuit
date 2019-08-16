@@ -21,7 +21,6 @@ class Solver:
     def __init__(self, schaltung):
         self.schaltung = schaltung
         self.potencialList = schaltung.potencialList
-        print("potenzialliste:", self.potencialList)
         self.jl = self.schaltung.getjl()
         self.solution = [] 
         self.gr = self.schaltung.getGr()
@@ -42,124 +41,92 @@ class Solver:
         self.inzidenz_i = self.schaltung.inzidenz_i
 
                 
-        #Vs löschen
+        #-----------Delete voltage sources-----------
         self.c_v = self.findeZusammenhangskomponente(self.inzidenz_v.transpose())
         self.q_v = self.createQArray(self.c_v, self.isMasse(self.inzidenz_v))
         self.p_v = self.createPArray(self.c_v, self.isMasse(self.inzidenz_v))
-        #self.p_v = np.array([0,0,0,0])
 
-        #Delete V_sources
         self.ac_v = self.inzidenz_c
         if not 0 in self.inzidenz_c.shape:  
             self.ac_v = np.dot(self.q_v.transpose(), (self.inzidenz_c))
-        print("Ac_v: \n", self.ac_v)
 
         self.al_v = self.inzidenz_l
         if not 0 in self.inzidenz_l.shape:  
             self.al_v = np.dot(self.q_v.transpose(), self.inzidenz_l)
-        print("Al_v: \n", self.al_v)
 
         self.ar_v = self.i_r
         if not 0 in self.inzidenz_r.shape:  
             self.ar_v = np.dot(np.transpose(self.q_v), self.inzidenz_r)
-        print("Ar_v: \n", self.ar_v)
 
         self.ai_v = self.inzidenz_i
         if not 0 in self.inzidenz_i.shape:  
             self.ai_v = np.dot(self.q_v.transpose(), (self.inzidenz_i))
-        print("ai_v;", self.ai_v)
 
-        #Kondesatoren
+        #-----------Delete capacitors-----------
         self.c_c = self.findeZusammenhangskomponente(np.array(self.ac_v).transpose())
         self.q_c = self.createQArray(self.c_c, self.isMasse(self.ac_v))
         self.p_c = self.createPArray(self.c_c, self.isMasse(self.ac_v))
 
-        #Delete Kondensators
-
         self.al_vc = self.inzidenz_l
         if not 0 in self.inzidenz_l.shape:   
             self.al_vc = np.dot(self.q_c.transpose(), self.al_v)
-        print("Al_cv: \n", self.al_vc)
 
         self.ai_vc = self.inzidenz_i
         if not 0 in self.inzidenz_i.shape:  
             self.ai_vc = np.dot(self.q_c.transpose(), self.ai_v)
-        print("Ai_vc:", self.ai_vc)
 
         self.ar_vc = self.inzidenz_r
         if not 0 in self.inzidenz_r.shape:  
             self.ar_vc = np.dot(self.q_c.transpose(), self.ar_v)
-        print("Ar_vc: \n", self.ar_vc)
 
-        #Resistors
+        #-----------Delete Resistors-----------
         self.c_r = self.findeZusammenhangskomponente(np.array(self.ar_vc).transpose())
         self.q_r = self.createQArray(self.c_r, self.isMasse(self.ar_vc))
         self.p_r = self.createPArray(self.c_r, self.isMasse(self.ar_vc))
 
-        #Delete Resistances 
-
         self.al_vcr = self.inzidenz_l
         if not 0 in self.inzidenz_l.shape:  
             self.al_vcr = np.dot(self.q_r.transpose(), self.al_vc)
-        print("Al_vcr: \n", self.al_vcr)
 
         self.ai_vcr = self.inzidenz_i
         if not 0 in self.inzidenz_i.shape:  
             self.ai_vcr = np.dot(self.q_r.transpose(), self.ai_vc)
-        print("Ai_vcr: \n", self.ai_vcr)
 
-        #self.ail_vcr = np.concatenate((np.array(self.al_vcr),np.array(self.ai_vcr)),axis=1)
-        #print("ail_vcr:", self.ail_vcr)
-
+        #-----------Calculate Loops-----------
         self.v_matrix = np.array([])
         self.w_matrix = np.array([])
         if not 0 in self.inzidenz_l.shape:
             self.v_matrix, self.w_matrix = createV_W_Matrix.tiefensuche(self.al_vcr)
-        #TODO berechnen neu wegen Beispiel. hier Fehler
-        #self.w_matrix = np.array([[]])
-        print()
-        #self.v_matrix = np.array([[1]])
 
-    def simulate(self):
+    def simulate(self, t, t_steps):
         """This function starts the simulation. 
         The simulation of future values is done by an ODE-Solver
         
-        :return: Returns a list with all simulate values for specific t's.
+        :param t: time to simulate to
+        :param t_steps: time-interval the time is divided into
+        :return: Returns a list with all simulate potencial-values for specific t's.
         :rtype: list of tupels."""
 
+        #--------initialize needed Values--------
         self.createInzidenzMatrices()
         self.startwertEntkopplung(self.potencialList, 0)
 
-
-        #A mal Q muss nämlich immer 0 ergeben, bzw A transponiert
-        #print("TEEEEST:", np.dot(self.w_matrix, np.transpose(self.ail_vcr)))
-   
-        print("------------Begin Calculation------------------")
-
-        #TODO eigentlich Vektor und kein Skalar
-        #ec = [2]
-        #e_r = [0,0]
         j_li = self.jl_i(self.jl)
-        #x = ec
-        t = 10
-        #self.solve(ec, j_li)
-        #self.e_r = [0,0]
+        t = np.arange(0, t, t_steps)
 
-        t = np.arange(0, 10, 1.0)
-        #print("x_start:", x)
-        print("T:", t)
-
-        print("ec:", self.ec)
+        #--------Check Input Parameters and start Simulation--------
         if 0 in self.ec.shape and not 0 in j_li.shape:
             x = []
             for i in j_li.tolist():
                 x.append(i[0])
-            y = odeint(self.cgSolve, x, t)
+            odeint(self.cgSolve, x, t)
+
         elif not 0 in self.ec.shape and 0 in j_li.shape:
             x = []
             for i in self.ec.tolist():
                 x.append(i[0])
-            y = odeint(self.cgSolve, x, t)
+            odeint(self.cgSolve, x, t)
+
         elif 0 in self.ec.shape and 0 in j_li.shape:
             x = np.array([0])
             for x in t:
@@ -170,61 +137,47 @@ class Solver:
                 x.append(i[0])
             for i in j_li.tolist():
                 x.append(i[0])
-            y = odeint(self.cgSolve, x, t)
-            #x = np.concatenate((self.ec, j_li), axis=0)
-        
-
-        """r = ode(self.cgSolve).set_integrator('zvode', method='bdf', with_jacobian=False)
-        r.set_initial_value(x, 0)
-        t1 = 10
-        dt = 1
-        while r.successful() and r.t < t1:
-            r.integrate(r.t+dt)
-            print("%g %g" % (r.t, r.y))"""
-        #y = odeint(self.cgSolve, x, t)
-
-        
-        #print(y)
+            odeint(self.cgSolve, x, t)
         
         return self.solution
 
     def g_xyt(self, ec,e_r,t):
-        """This function provides a for the simulation nessesary function.
+        """This function provides a for the simulation nessesary function (simulation of resistors).
         Therefore it contains no business-logic, only simple math-operations to build the function
         
+        :param ec: decoppeld potencial value for capacitors
+        :param e_r: decoppeld potencial value for resistors
+        :param t: actual point in time the simulation is at
         :return: Returns the builded function.
         :rtype: function."""
 
         funktionPart_1 = np.dot(np.transpose(self.p_r), self.ar_vc)
-
         parameters = np.dot(np.transpose(self.ar_vc), self.p_r)
-
         funktionPart_1 = np.dot(funktionPart_1, self.gr_not_vc(np.dot(parameters, e_r), ec, t))
+
         functionPart_2 = 0
         if not 0 in self.inzidenz_l.shape:
+
             functionPart_2 = np.dot(np.transpose(self.p_r), self.al_vc)
-
             qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
-
             functionPart_2 = np.dot(functionPart_2, qliJl_i)
 
         return np.add(np.add(funktionPart_1,functionPart_2),self.i_r(t))
 
-
-    #TODO ifs wenn irgendwas leer ist
     def gr_not_vc(self, x,ec,t):
-        """This function provides a for the simulation nessesary function.
+        """This function provides a for the simulation nessesary function (simulation of resistors).
         Therefore it contains no business-logic, only simple math-operations to build the function
         
+        :param x: decoppeld and modified potencial value for resistors
+        :param ec: decoppeld potencial value for capacitors
+        :param t: actual point in time the simulation is at
         :return: Returns the builded function.
         :rtype: function."""
         
         if 0 in self.ar_v.shape or 0 in self.p_c.shape:
             parameter1 = 0
-        else:
-            
-            parameter1= self.ar_v.transpose().dot(self.p_c)
-            
+        else:   
+            parameter1= self.ar_v.transpose().dot(self.p_c) 
             parameter1= parameter1.dot(ec)
 
         if 0 in self.inzidenz_r.shape or 0 in self.p_v.shape or not self.inzidenz_v.shape:
@@ -237,39 +190,12 @@ class Solver:
         f = self.g_r(np.add(np.add(x,parameter1),parameter3), t)
         return f
 
-    def matrix(self, ec, jl_i, t):
-        """This function provides a for the simulation nessesary matrix.
-        Therefore it contains no business-logic, only simple math-operations to build the matrix
-        
-        :return: Returns the builded matrix.
-        :rtype: numpy.array"""
-        mc = np.array(self.matrix_mc(ec, t))
-        ml = self.matrix_ml(jl_i, t)
-        if not mc.tolist() :
-            return ml 
-        elif not ml.tolist():
-            return mc
-        
-        mc_x = len(mc[0])
-        mc_y = len(mc)
-        ml_x = len(ml[0])
-        ml_y = len(ml)
-
-        zeros_1 = np.zeros((ml_x, mc_y))
-        zeros_2 = np.zeros((mc_x, ml_y))
-
-        matrix = np.array([[mc, zeros_1], [zeros_2, ml]])
-
-        mc = np.concatenate((mc, zeros_1), axis=0)
-        ml = np.concatenate((zeros_2, ml), axis= 0)
-        matrix= np.concatenate((mc,ml), axis=1)
-
-        return matrix
-
     def matrix_mc(self, ec, t):
-        """This function provides a for the simulation nessesary matrix.
+        """This function provides a for the simulation nessesary matrix (simulation of capacitors).
         Therefore it contains no business-logic, only simple math-operations to build the matrix
         
+        :param ec: decoppeld potencial value for capacitors
+        :param t: actual point in time the simulation is at
         :return: Returns the builded matrix.
         :rtype: numpy.array"""
         
@@ -283,46 +209,31 @@ class Solver:
         return matrix
 
     def matrix_ml(self, jl_i, t):
-        """This function provides a for the simulation nessesary matrix.
+        """This function provides a for the simulation nessesary matrix (simulation of coils).
         Therefore it contains no business-logic, only simple math-operations to build the matrix
         
+        :param jl_i: decoppeld potencial value for coils
+        :param t: actual point in time the simulation is at
         :return: Returns the builded matrix.
         :rtype: numpy.array"""
 
-        v_matrix = self.v_matrix
-
-        qliJl_i = self.jl - v_matrix.dot(self.i_star(t))
+        qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
 
         matrix = self.w_matrix.transpose().dot(self.ableitung_l_nachx(qliJl_i, t)).dot(self.w_matrix)
 
         return matrix
 
-    def function(self, ec, jl_i, e_r, t):
-        """This function provides a for the simulation nessesary function.
-        Therefore it contains no business-logic, only simple math-operations to build the function
-        
-        :return: Returns the builded function.
-        :rtype: function."""
-        
-        function1 = -self.function1(ec, jl_i, e_r, t)
-        function2 = -self.function2(ec, jl_i, e_r, t)
-        
-        if not function1.tolist():
-            
-            return function2
-        elif not function2.tolist():
-            return function1
-        function = np.array([function1, function2])
-        #function = function.transpose()
-
-        return function
-
     def function1(self, ec, jl_i, e_r, t):
-        """This function provides a for the simulation nessesary function.
+        """This function provides a for the simulation nessesary function (simulation of capacitors).
         Therefore it contains no business-logic, only simple math-operations to build the function
         
+        :param ec: decoppeld potencial value for capacitors
+        :param jl_i: decoppeld potencial value for coils
+        :param e_r: decoppeld potencial value for resistors
+        :param t: actual point in time the simulation is at
         :return: Returns the builded function.
         :rtype: function."""
+
         summand1 = 0
         if not 0 in self.ac_v.shape:
             summand1 = self.p_c.transpose().dot(self.ac_v)
@@ -337,24 +248,27 @@ class Solver:
         summand3 = 0
         if not 0 in self.ar_vc.shape:
             parameter2 = self.ar_vc.transpose().dot(self.p_r).dot(e_r)
-            #TODO das np.array wegnehmen
             summand3 = self.p_c.transpose().dot(self.ar_v).dot(self.gr_not_vc(parameter2, np.array(ec), t))
 
         summand4 = self.i_c(t)
 
         function1 = np.add(summand1, np.add(summand2, np.add(summand3, summand4)))
+
         return function1
 
     def function2(self, ec, jl_i, e_r, t):
-        """This function provides a for the simulation nessesary function.
+        """This function provides a for the simulation nessesary function (simulation of coils).
         Therefore it contains no business-logic, only simple math-operations to build the function
         
+        :param ec: decoppeld potencial value for capacitors
+        :param jl_i: decoppeld potencial value for coils
+        :param e_r: decoppeld potencial value for resistors
+        :param t: actual point in time the simulation is at
         :return: Returns the builded function.
         :rtype: function."""
        
         qliJl_i = self.jl - self.v_matrix.dot(self.i_star(t))
         
-
         minuend1 = np.transpose(self.w_matrix).dot(self.ableitung_l_nacht(qliJl_i, t))
         minuend2 = 0
         minuend3 = 0
@@ -368,20 +282,28 @@ class Solver:
         return function2
 
     def g_r(self, x, t):
+        """This function returns the values of the resistors of a specific voltage and point in time
+        
+        :param x: voltage-value
+        :param t: actual point in time the simulation is at
+        :return: Returns the builded function.
+        :rtype: function."""
+
         ergebnis = []
         for i in range(len(self.gr)):
             ergebnis.append(self.gr[i](x[i],t))
 
         return np.array(ergebnis)
 
-
     def ableitung_c_nachx(self, ec, t):
-        #TODO fertig implementieren
-        #return [[ec[0], 0], [0, ec[1]]]
-        ergebnis = []
-        #for function in self.c_dx:
-        #    ergebnis.append(function(ec,t))
+        """This function returns the derivative (for voltage) values of the capacitors of a specific voltage and point in time
+        
+        :param ec: voltage-value
+        :param t: actual point in time the simulation is at
+        :return: Returns the builded function.
+        :rtype: function."""
 
+        ergebnis = []
 
         for i in range (len(self.c_dx)):
             zeile = [0 for k in range(len(self.c_dx))]
@@ -391,8 +313,13 @@ class Solver:
         return np.array(ergebnis)
 
     def ableitung_c_nacht(self, ec, t):
-        #TODO implementieren Jakpbo MAtrix ( also eignitlich nur die Ableitungen auf den Diagonalen)
-        #return ec
+        """This function returns the derivative (for time) values of the capacitors of a specific voltage and point in time
+        
+        :param ec: voltage-value
+        :param t: actual point in time the simulation is at
+        :return: Returns the builded function.
+        :rtype: function."""
+
         ergebnis = []
         for function in self.c_dt:
             ergebnis.append(function(ec,t))
@@ -400,8 +327,13 @@ class Solver:
         return np.array(ergebnis)
 
     def ableitung_l_nachx(self, x, t):
-        #TODO fertig implementieren
-        #return [[x]]
+        """This function returns the derivative (for voltage) values of the capacitors of a specific voltage and point in time
+        
+        :param x: voltage-value
+        :param t: actual point in time the simulation is at
+        :return: Returns the builded function.
+        :rtype: function."""
+
         ergebnis = []
         for i in range (len(self.l_dx)):
             zeile = [0 for k in range(len(self.l_dx))]
@@ -411,20 +343,25 @@ class Solver:
         return np.array(ergebnis)
 
     def ableitung_l_nacht(self, x, t):
-        #TODO fertig implementieren
-        #return x
+        """This function returns the derivative (for voltage) values of the capacitors of a specific voltage and point in time
+        
+        :param x: voltage-value
+        :param t: actual point in time the simulation is at
+        :return: Returns the builded function.
+        :rtype: function."""
+
         ergebnis = []
         for function in self.l_dt:
             ergebnis.append(function(x,t))
 
         return np.array(ergebnis)
 
-
     def v_star(self,t):
         """This function provides a for the simulation nessesary function.
-        It is a modifed other function, which the user selected
+        It is a list of modifed other function, which the user selected for the behavior of voltage-sources.
         Therefore it contains no business-logic, only simple math-operations to build the function
-        
+
+        :param t: actual point in time the simulation is at
         :return: Returns the builded function.
         :rtype: function."""
 
@@ -436,6 +373,12 @@ class Solver:
         return ergebnis   
 
     def v_t(self, t):
+        """This function returns the voltage values of the voltage-sources for a point in time
+
+        :param t: actual point in time the simulation is at
+        :return: Returns the builded function.
+        :rtype: function."""
+
         ergebnis = []
         for function in self.vt:
             ergebnis.append(function(0,t))
@@ -444,12 +387,12 @@ class Solver:
 
     def i_star(self, t):
         """This function provides a for the simulation nessesary function.
-        It is a modifed other function, which the user selected
+        It is a list of modifed other function, which the user selected for the behavior of power-sources.
         Therefore it contains no business-logic, only simple math-operations to build the function
         
+        :param t: actual point in time the simulation is at
         :return: Returns the builded function.
         :rtype: function."""
-        #TODO
 
         if 0 in self.inzidenz_l.shape:
             return 0
@@ -462,12 +405,13 @@ class Solver:
    
     def i_c(self, t):
         """This function provides a for the simulation nessesary function.
-        It is a modifed other function, which the user selected
         Therefore it contains no business-logic, only simple math-operations to build the function
         
+        :param t: actual point in time the simulation is at
         :return: Returns the builded function.
         :rtype: function."""
-        #TODO fertig implementieren. VL wird berechnet aus anderen sachen !!!!
+        
+
         summand1 = 0
         if not 0 in self.ai_v.shape and not 0 in self.p_c:
             summand1 = self.p_c.transpose().dot(self.ai_v).dot(self.i_s(t))
@@ -487,14 +431,12 @@ class Solver:
     
     def i_r(self,t):
         """This function provides a for the simulation nessesary function.
-        It is a modifed other function, which the user selected
         Therefore it contains no business-logic, only simple math-operations to build the function
         
+        :param t: actual point in time the simulation is at
         :return: Returns the builded function.
         :rtype: function."""
-         #TODO fertig implementieren. VL wird berechnet aus anderen sachen !!!!
-        print()
-        
+
         summand1 = 0
         summand2 = 0
         if not 0 in self.inzidenz_i.shape:
@@ -505,7 +447,13 @@ class Solver:
         return ergebnis
 
     def v_l(self, t):
-        #TODO fertig implementieren. VL wird berechnet aus anderen sachen !!!!
+        """This function provides a for the simulation nessesary function.
+        Therefore it contains no business-logic, only simple math-operations to build the function
+        
+        :param t: actual point in time the simulation is at
+        :return: Returns the builded function.
+        :rtype: function."""
+
         ergebnis = -self.w_matrix.transpose().dot(self.inzidenz_l.transpose()).dot(self.p_v).dot(self.v_star(t))
         return ergebnis
 
@@ -515,6 +463,7 @@ class Solver:
         
         :param e_c: calculated e_c value from the simulation
         :param e_r: calculated e_r value from the simulation
+        :param t: actual point in time the simulation is at
         :return: Returns calculated e_l value.
         :rtype: vector."""
 

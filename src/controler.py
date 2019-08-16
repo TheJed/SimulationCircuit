@@ -27,6 +27,10 @@ class Controler:
         self.circuitDrawing = draw.CircuitDrawing(choosen)
         self.circuitDrawing.draw()
 
+    def setTValues(self, t, t_steps):
+        self.t = t
+        self.t_steps = t_steps
+
     def addComponent(self, component, direction, name, eFromIndex, eToIndex, value, function):
         elabel = self.circuitDrawing.addComponent(component, direction, name, eFromIndex, eToIndex)
 
@@ -97,7 +101,7 @@ class Controler:
 
 
         solver = solv.Solver(schaltung)
-        self.solutionData = solver.simulate()
+        self.solutionData = solver.simulate(self.t, self.t_steps)
 
     def getSolutionData(self):
         return self.solutionData

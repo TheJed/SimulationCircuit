@@ -742,10 +742,11 @@ class Window(QtGui.QApplication):
         for x in range(len(self.list_potencialInputs)):
             self.controler.addPotencialValue("E" + str(x), self.list_potencialInputs[x].text())
 
+        self.controler.setTValues(float(self.list_timeInputs[0].text()), float(self.list_timeInputs[1].text()))
 
         self.potenzialParameters.close()
-        self.controler.simulate()
-        """try:
+        #self.controler.simulate()
+        try:
             self.controler.simulate()
             qt = QtGui.QMessageBox()
             qt.setIcon(QtGui.QMessageBox.Information)
@@ -757,7 +758,7 @@ class Window(QtGui.QApplication):
             qt.setIcon(QtGui.QMessageBox.Critical)
             qt.setWindowTitle("An Error Occured")
             qt.setText("The circuit could not be simulated \nThe circuit might not be valid")
-            qt.exec()"""
+            qt.exec()
 
         for potencial in range(len(self.potenzialDropDownFrom)-2):
             self.potenzialDropDown.addItem("Potencial " + str(potencial))
@@ -772,6 +773,23 @@ class Window(QtGui.QApplication):
         self.potenzialParameters = QtGui.QDialog()
 
         layout = QtGui.QFormLayout()
+
+        label_t = QtGui.QLabel("Please insert the time to simulate")
+        t_input = QtGui.QLineEdit()
+        t_input.setObjectName("")
+        t_input.setText("1.0")
+        t_input.setValidator(self.validator)
+
+        label_t_steps = QtGui.QLabel("Please insert the steps you want to split the time")
+        t_steps_input = QtGui.QLineEdit()
+        t_steps_input.setObjectName("")
+        t_steps_input.setText("1.0")
+        t_steps_input.setValidator(self.validator)
+
+        layout.addRow(label_t, t_input)
+        layout.addRow(label_t_steps, t_steps_input)
+
+        self.list_timeInputs = [t_input, t_steps_input]
 
         label_infoPotencial = QtGui.QLabel("Please insert start-value (float) for the potencials")
         self.list_potencialInputs = []
@@ -793,17 +811,7 @@ class Window(QtGui.QApplication):
         button_startSimulation = QtGui.QPushButton("Start Simulation")
         button_startSimulation.clicked.connect(self.simulate)
         layout.addRow(button_startSimulation)
-        #le = QtGui.QLineEdit()
-        #layout.addRow(le)
-        #btn1 = QtGui.QPushButton("get name")
-		
-        #le1 = QtGui.QLineEdit()
-        #layout.addRow(btn1,le1)
-        #btn2 = QtGui.QPushButton("Enter an integer")
-        
-		
-        #le2 = QtGui.QLineEdit()
-        #layout.addRow(btn2,le2)
+
         self.potenzialParameters.setLayout(layout)
         self.potenzialParameters.setWindowTitle("Potencial Values")
 
