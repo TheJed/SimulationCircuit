@@ -140,6 +140,7 @@ class Solver:
                 x.append(i[0])
             odeint(self.cgSolve, x, t)
         
+
         return self.solution
 
     def g_xyt(self, ec,e_r,t):
@@ -559,7 +560,9 @@ class Solver:
             if i<self.p_r.shape[1]:
                 self.er.append(temp[i])
             else:
-                el.append(temp[i])  
+                el.append(temp[i]) 
+
+        return [self.v_star(t), self.ec, self.er, el] 
       
     def zurueckcoppler(self, ec, er, t):
         """This function calculates the values of the potencials for a specific point in time based on the decoppeld potencial values

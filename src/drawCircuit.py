@@ -21,13 +21,14 @@ class CircuitDrawing():
 
         :param choosen: Choosed starting component (e.g. v-source or i-source)"""
         
-        current_path = os.path.realpath(__file__)
+        """current_path = os.path.realpath(__file__)
         current_path = current_path.split("\\")
         pathToProgramm= current_path[:-2 or None]
         self.pathToRessources = ""
         for s in pathToProgramm:
             self.pathToRessources += s +"\\" 
-        self.pathToRessources += "resources\\"
+        self.pathToRessources += "resources\\"""
+        self.pathToRessources = "../resources/"
 
         self.fileLine = []
 
@@ -145,5 +146,5 @@ class CircuitDrawing():
     def draw(self):
         """Draws the new circuit and saves it to a file, so that the gui can load it"""
         self.circuitDrawing.draw()
-        self.circuitDrawing.save(self.pathToRessources + "ergebnis.png")
+        self.circuitDrawing.save("../resources/ergebnis.png")
 

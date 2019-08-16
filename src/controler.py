@@ -19,13 +19,14 @@ class Controler:
         self.netHandler = nt.NetListHandler()
         self.solutionData = []
 
-        current_path = os.path.realpath(__file__)
+        """current_path = os.path.realpath(__file__)
         current_path = current_path.split("\\")
         pathToProgramm= current_path[:-2 or None]
         self.pathToRessources = ""
         for s in pathToProgramm:
             self.pathToRessources += s +"\\" 
-        self.pathToRessources += "resources\\"
+        self.pathToRessources += "resources\\"""
+        self.pathToRessources = "../resources"
 
 
     def createCircuit(self, choosen, function):

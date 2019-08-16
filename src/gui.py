@@ -48,7 +48,8 @@ class Window(QtGui.QApplication):
         pathToProgramm= current_path[:-2 or None]
         self.path = ""
         for s in pathToProgramm:
-            self.path += s +"\\" 
+            self.path += s +"\\"
+
         
         #----------------------------Validator for float inputs----------------------------#
         regexp_onlyDoubles = QtCore.QRegExp('^([-+]?\d*\.\d+|\d+)$')
@@ -67,7 +68,7 @@ class Window(QtGui.QApplication):
 
         #----------------------------Init Main Window----------------------------# 
 
-        cssFile = self.path + "\\resources\\css-gui.txt"
+        cssFile = "../resources/css-gui.txt"
         css = ""
         with open(cssFile,"r") as fh:
             css += (fh.read())
@@ -132,7 +133,7 @@ class Window(QtGui.QApplication):
 
         self.toolbar = NavigationToolbar(self.canvas, containerGraph) 
         
-        self.buttonPlotPotenzial = QtGui.QPushButton('Plot First Potenzial ')
+        self.buttonPlotPotenzial = QtGui.QPushButton('Plot Potenzial ')
         self.buttonPlotPotenzial.clicked.connect(self.plot2)
         self.buttonPlotPotenzial.hide()
         self.buttonPlotPotenzial.setFixedSize(120,20)
@@ -235,13 +236,13 @@ class Window(QtGui.QApplication):
         """This function loads and sets the application icon"""
 
         app_icon = QtGui.QIcon()
-        app_icon.addFile(self.path + "\\resources\\favicon.ico")
-        app_icon.addFile(self.path + "\\resources\\favicon.ico", QtCore.QSize(16,16))
-        app_icon.addFile(self.path + "\\resources\\favicon.ico", QtCore.QSize(24,24))
-        app_icon.addFile(self.path + "\\resources\\favicon.ico", QtCore.QSize(32,32))
-        app_icon.addFile(self.path + "\\resources\\favicon.ico", QtCore.QSize(48,48))
-        app_icon.addFile(self.path + "\\resources\\favicon.ico", QtCore.QSize(256,256))
-        self.setWindowIcon(QtGui.QIcon(self.path + "\\resources\\favicon.ico"))
+        app_icon.addFile("..\\resources\\favicon.ico")
+        app_icon.addFile("..\\resources\\favicon.ico", QtCore.QSize(16,16))
+        app_icon.addFile("..\\resources\\favicon.ico", QtCore.QSize(24,24))
+        app_icon.addFile("..\\resources\\favicon.ico", QtCore.QSize(32,32))
+        app_icon.addFile("..\\resources\\favicon.ico", QtCore.QSize(48,48))
+        app_icon.addFile("..\\resources\\favicon.ico", QtCore.QSize(256,256))
+        self.setWindowIcon(QtGui.QIcon("..\\resources\\favicon.ico"))
         self.main_window.setWindowIcon(app_icon)
 
     def setMenu(self):
@@ -346,7 +347,7 @@ class Window(QtGui.QApplication):
 
         self.function_c_DropwDown.hide()
         self.function_i_DropwDown.hide()
-        self.function_r_DropwDown.hide()
+        #self.function_r_DropwDown.hide()
         self.function_v_DropwDown.hide()
         self.function_l_DropwDown.hide()
         
@@ -636,7 +637,7 @@ class Window(QtGui.QApplication):
     def updateGraph(self):
         """Updates the current visual representation of the circuit"""
         
-        self.pixmap = QtGui.QPixmap(self.path + "\\resources\\ergebnis.png")
+        self.pixmap = QtGui.QPixmap("..\\resources\\ergebnis.png")
         self.image.setPixmap(self.pixmap)
 
     def simulate(self):

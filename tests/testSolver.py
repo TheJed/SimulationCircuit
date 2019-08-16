@@ -2,6 +2,8 @@ import unittest
 import sys
 sys.path.insert(0, '../src/')
 import createP_Q_Matrix as cpq
+import netlistHandler
+import solver
 
 import numpy as np
 
@@ -85,7 +87,6 @@ class SolverTests(unittest.TestCase):
         isMasse = True
 
         p = cpq.createPArray(cx, isMasse)
-        print(p)
         expected_p = np.array([[1,0], [0,1], [0,0], [0,0]])
 
         self.assertTrue(np.array_equal(p,expected_p))
@@ -99,7 +100,8 @@ class SolverTests(unittest.TestCase):
         m = np.array([[1,0], [0,0], [0, 1], [0,-1]])
         isMasse = cpq.isMasse(m)
         self.assertTrue(isMasse)
-        
+
+       
         
 
 if __name__ == '__main__':

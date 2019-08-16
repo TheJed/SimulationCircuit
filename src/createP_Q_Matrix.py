@@ -1,3 +1,7 @@
+"""
+    This module creates the P and Q Matrices
+    :copyright: (c) 2019 by Tobias Klein.
+"""
 import numpy as np
 
 def findConnectedComponents(inzidenzMatrix, potenzialNumber):
