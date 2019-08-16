@@ -176,24 +176,25 @@ def buildWMatrix(loopList, kantenList, numberOfKanten, u_matrix):
         toPotenzial = loopCopy[0][1]
         loopCopy.pop(0)
         loopKanten.pop(0)
-
+        
         while len(loopCopy) > 0:
-
+            
             kante = 0
             for i in range(len(loopCopy)):
                 if toPotenzial in loopCopy[i]:
                     kante = i
+                    
                     break
             
             if toPotenzial == loopCopy[kante][0]:
-
+                
                 toPotenzial = loopCopy[kante][1]
                 loopCopy.pop(kante)
                 k = loopKanten.pop(kante)
                 directionDic[k] = 1
 
             else:
-
+                
                 toPotenzial = loopCopy[kante][0]
                 loopCopy.pop(kante)
                 k = loopKanten.pop(kante)
@@ -206,9 +207,13 @@ def buildWMatrix(loopList, kantenList, numberOfKanten, u_matrix):
                 w_eintrag.append(directionDic[kante])
             else:
                 w_eintrag.append(0)
-      
+        
         w_matrix.append(w_eintrag)
 
+    w_matrix = np.array(w_matrix)
+    print("W-Matrix: \n", w_matrix.T)
+
+    #TODO hier schöner machen
     if not w_matrix.tolist():
         return np.array([[]])
     return w_matrix

@@ -5,6 +5,7 @@
 
 import numpy as np
 import createV_W_Matrix
+import createP_Q_Matrix as cpq
 from sympy import Matrix
 from scipy import optimize
 from scipy.sparse import linalg as linalgSolver
@@ -14,6 +15,7 @@ from scipy.sparse.csgraph import minimum_spanning_tree as spanningTree
 from scipy.sparse.csgraph import breadth_first_tree as bfTree
 import numpy.linalg as LA
 from scipy.sparse.linalg import lsqr
+
 
 class Solver:
 
@@ -41,9 +43,9 @@ class Solver:
 
                 
         #-----------Delete voltage sources-----------
-        self.c_v = self.findConnectedComponents(self.inzidenz_v.transpose())
-        self.q_v = self.createQArray(self.c_v, self.isMasse(self.inzidenz_v))
-        self.p_v = self.createPArray(self.c_v, self.isMasse(self.inzidenz_v))
+        self.c_v = cpq.findConnectedComponents(self.inzidenz_v.transpose(), self.schaltung.potenzialNumber-1)
+        self.q_v = cpq.createQArray(self.c_v, self.isMasse(self.inzidenz_v))
+        self.p_v = cpq.createPArray(self.c_v, self.isMasse(self.inzidenz_v))
 
         self.ac_v = self.inzidenz_c
         if not 0 in self.inzidenz_c.shape:  
@@ -62,9 +64,9 @@ class Solver:
             self.ai_v = np.dot(self.q_v.transpose(), (self.inzidenz_i))
 
         #-----------Delete capacitors-----------
-        self.c_c = self.findConnectedComponents(np.array(self.ac_v).transpose())
-        self.q_c = self.createQArray(self.c_c, self.isMasse(self.ac_v))
-        self.p_c = self.createPArray(self.c_c, self.isMasse(self.ac_v))
+        self.c_c = cpq.findConnectedComponents(np.array(self.ac_v).transpose(), self.schaltung.potenzialNumber-1)
+        self.q_c = cpq.createQArray(self.c_c, self.isMasse(self.ac_v))
+        self.p_c = cpq.createPArray(self.c_c, self.isMasse(self.ac_v))
 
         self.al_vc = self.inzidenz_l
         if not 0 in self.inzidenz_l.shape:   
@@ -79,9 +81,9 @@ class Solver:
             self.ar_vc = np.dot(self.q_c.transpose(), self.ar_v)
 
         #-----------Delete Resistors-----------
-        self.c_r = self.findConnectedComponents(np.array(self.ar_vc).transpose())
-        self.q_r = self.createQArray(self.c_r, self.isMasse(self.ar_vc))
-        self.p_r = self.createPArray(self.c_r, self.isMasse(self.ar_vc))
+        self.c_r = cpq.findConnectedComponents(np.array(self.ar_vc).transpose(), self.schaltung.potenzialNumber-1)
+        self.q_r = cpq.createQArray(self.c_r, self.isMasse(self.ar_vc))
+        self.p_r = cpq.createPArray(self.c_r, self.isMasse(self.ar_vc))
 
         self.al_vcr = self.inzidenz_l
         if not 0 in self.inzidenz_l.shape:  
@@ -613,112 +615,7 @@ class Solver:
             return False
         else:
             return True
-
-    def findConnectedComponents(self, inzidenzMatrix):
-        """This function calculates the connected components for a specific component group
-        
-        :param inzidenzMatrix: the inzidenz matrix of the component group
-        :return: Returns a list with the connected components
-        :rtype: list of integers."""
-
-        if not inzidenzMatrix.tolist():
-            potenzialListe = list(range(self.schaltung.potenzialNumber-1))
-        else:
-            potenzialListe = list(range(inzidenzMatrix.shape[1]))
-        
-        zusammenhangskomponenteListe = []
-        while len(potenzialListe) > 0:
-
-            potenzialListe, c_x = self.deepSearchComponent(potenzialListe, potenzialListe[0], inzidenzMatrix, 0)
-            zusammenhangskomponenteListe.append(c_x)
-
-        return zusammenhangskomponenteListe
-
-    def deepSearchComponent(self, notVisitedPotencials, potencial, inzidenzMatrix, zusammenhangskomponente):
-        """This function finds the connected components for a specific component group with depth-search
-        
-        :param notVisitedPotencials: list of unvisited potencials
-        :param potencial: current potencial
-        :param inzidenzMatrix: the inzidenzMatrix of the component group
-        :param zusammenhangscomponente: current number of connected components
-        :return: Returns a list with the unvisited potencials and the number of connected components
-        :rtype: list, integer."""
-
-        if len(notVisitedPotencials) == 0:
-            return notVisitedPotencials, zusammenhangskomponente
-        zusammenhangskomponente += 1
-        notVisitedPotencials.remove(potencial)
-
-        for element in inzidenzMatrix:
-
-            if element[potencial] != 0:
-
-                if element[potencial] * -1 in element.tolist():
-                    outputPotencial = element.tolist().index(element[potencial] * -1)
-
-                    if outputPotencial in notVisitedPotencials:
-
-                        notVisitedPotencials, zusammenhangskomponente = self.deepSearchComponent(notVisitedPotencials, outputPotencial, inzidenzMatrix, zusammenhangskomponente)
-            
-        return notVisitedPotencials, zusammenhangskomponente
-        
-    def createQArray(self, c_x, isMasse):
-        """This function calculates the Q-Array for component-groups. The Q-Array is a kernel of the inzidenz matrix from the component-group 
-        
-        :param c_x: list of connected components
-        :param isMasse: is one of the components connected to the mass-potencial
-        :return: Returns the Q-Array
-        :rtype: np.array."""
-
-        if(isMasse):
-            if(len(c_x) == 1 and c_x[0] == 1):
-                print([])
-                return np.array([[1]])
-            qArray = np.zeros((sum(c_x), len(c_x)))
-        else:
-            qArray = np.zeros((sum(c_x), len(c_x)))
-
-        zeile = 0
-        for x in range(0, len(c_x)):
-            for i in range (0,c_x[x]):
-                qArray[zeile][x] = 1
-                zeile += 1
-        return qArray
-
-    def createPArray(self, c_x, isMasse):
-
-        """This function calculates the P-Array for component-groups.
-        
-        :param c_x: list of connected components
-        :param isMasse: is one of the components connected to the mass-potencial
-        :return: Returns the P-Array
-        :rtype: np.array."""
-
-        rows = 0
-        columns = 0
-        for x in c_x:
-            columns = columns + x-1
-            rows += x-1 + 1
-        
-        dimension = (rows, columns)
-        pArray = np.zeros(dimension)
-
-        c_x1 = [value-1 for value in c_x]
-        spalte = 0
-        zeile = 0
-        for x in c_x1:
-
-            i = x
-            while i > 0:
-                pArray[zeile][spalte] = 1
-                i = i -1
-                spalte+= 1
-                zeile += 1
-
-            zeile += 1
-
-        return pArray
-        
+    
     def cgSolve(self, x, t):
         """This is function is part of the simulation and calculates new ec and jl_i values for a specific point in time
 
