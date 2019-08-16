@@ -1,18 +1,22 @@
-import sys
+"""
+    This module creates and handels the GUI for the simulation
+    :copyright: (c) 2019 by Tobias Klein.
+"""
+
 from PyQt4 import QtGui
+import PyQt4.QtCore as QtCore
+
+import sys
 import pickle
+import math
+import inspect
+import random
+import os
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt4agg import FigureManagerQT as Fig
 from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-
-import PyQt4.QtCore as QtCore
-import pyqtgraph as pg
-import math
-import inspect
-import random
-import os
 
 import SchemDraw as schem
 import SchemDraw.elements as e
@@ -22,13 +26,6 @@ import netlistHandler as netHandler
 import controler as controler
 import solver as solv
 import functionLib
-import test
-import inspect 
-
-#from matplotlib import backend_bases
-# mpl.rcParams['toolbar'] = 'None'
-
-
 
 
 if "win" in sys.platform:
@@ -37,11 +34,15 @@ if "win" in sys.platform:
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
 class Window(QtGui.QApplication):
+    """This class holds/is the main windows of the GUI"""
+
     EXIT_CODE_REBOOT = -666
     
     def __init__(self, sys_argv):
+        """Inits/ Builds the GUI"""
+        super(Window, self).__init__(sys_argv)
 
-        
+        #----------------------------Setting path to resources folder----------------------------#
         current_path = os.path.realpath(__file__)
         current_path = current_path.split("\\")
         pathToProgramm= current_path[:-2 or None]
@@ -49,17 +50,10 @@ class Window(QtGui.QApplication):
         for s in pathToProgramm:
             self.path += s +"\\" 
         
+        #----------------------------Validator for float inputs----------------------------#
         regexp_onlyDoubles = QtCore.QRegExp('^([-+]?\d*\.\d+|\d+)$')
         self.validator = QtGui.QRegExpValidator(regexp_onlyDoubles)
 
-        pg.setConfigOption('background', 'w')
-        pg.setConfigOption('foreground', '#0F9BA8')
-        
-      
-        #super(Window, self).__init__(parent)
-        super(Window, self).__init__(sys_argv)
-
-        
 
         #----------------------------Variablen----------------------------#  
 
@@ -71,7 +65,7 @@ class Window(QtGui.QApplication):
         
         self.controler = controler.Controler()
 
-        #----------------------------Init Applikation----------------------------# 
+        #----------------------------Init Main Window----------------------------# 
 
         cssFile = self.path + "\\resources\\css-gui.txt"
         css = ""
@@ -94,20 +88,16 @@ class Window(QtGui.QApplication):
         containerMain = QtGui.QWidget()
         containerMain.setObjectName("containerMain")
        
-        
         containerMain.setStyleSheet(css)
         self.main_window.setStyleSheet(css)
         mainLayout = QtGui.QVBoxLayout(containerMain)
         
-
-
         containerGraph = QtGui.QWidget()
         containerGraph.setObjectName("containerGraph")
         containerGraph.setFixedWidth(width * 0.965)
         
         graphLayout = QtGui.QVBoxLayout(containerGraph)
 
-        
         containerCircuit = QtGui.QWidget()
 
         containerCircuit.setObjectName("containerCircuit")
@@ -136,33 +126,10 @@ class Window(QtGui.QApplication):
         self.setMenu()
         self.createDropDowns()
         #----------------------------Graph-Layout----------------------------#
-        #Layout für die Anzeige des Graphen
-
-        # a figure instance to plot on
-        """self.creatPlotFigure()
-        #graphLayout.addWidget(self.canvas)
-        graphLayout.addWidget(self.buttonPlotPotenzial)
-        graphLayout.addWidget(self.pgGraph)"""
-
-        """backend_bases.NavigationToolbar2.toolitems = (
-            ('Home', 'Reset original view', 'home', 'home'),
-            ('Back', 'Back to  previous view', 'back', 'back'),
-            ('Forward', 'Forward to next view', 'forward', 'forward'),
-            (None, None, None, None),
-            ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
-            (None, None, None, None),
-            ('Save', 'Save the figure', 'filesave', 'save_figure'),
-            )"""
-
+       
         self.figure = Figure()
-        
-
-        # this is the Canvas Widget that displays the `figure`
-        # it takes the `figure` instance as a parameter to __init__
         self.canvas = FigureCanvas(self.figure)
 
-        # this is the Navigation widget
-        # it takes the Canvas widget and a parent
         self.toolbar = NavigationToolbar(self.canvas, containerGraph) 
         
         self.buttonPlotPotenzial = QtGui.QPushButton('Plot First Potenzial ')
@@ -181,9 +148,6 @@ class Window(QtGui.QApplication):
         graphLayout.addWidget(self.toolbar)
         graphLayout.addWidget(graphInputWidget)
         graphLayout.addWidget(self.canvas)
-        
-
-
 
         #----------------------------Circuit-Layout----------------------------#
 
@@ -191,11 +155,9 @@ class Window(QtGui.QApplication):
         circuitLayout.setContentsMargins(20,20,20,20)
         circuitLayout.addWidget(self.scrollArea)
 
-
         #----------------------------Input-Layout----------------------------#
 
         inputNameLayout = QtGui.QHBoxLayout()
-
         
         self.createFunctionDropwDowns()
 
@@ -213,16 +175,14 @@ class Window(QtGui.QApplication):
         inputComponentLayout.addWidget(self.potenzialDropDownFrom)
         inputComponentLayout.addWidget(self.potenzialDropDownTo)
 
-
         inputComponentLayout2 = QtGui.QHBoxLayout()
 
-        self.directionLabel = QtGui.QLabel("Richtung")
+        self.directionLabel = QtGui.QLabel("Direction")
         inputComponentLayout2.addWidget(self.directionLabel)
         inputComponentLayout2.addWidget(self.directionDropwDown)
 
 
         inputComponentLayout3 = QtGui.QHBoxLayout()
-
 
         self.componentValueLabel = QtGui.QLabel("Start-Value of Component")
         self.componentValueLabel.hide()
@@ -231,12 +191,7 @@ class Window(QtGui.QApplication):
         self.componentValueInput.setText("0.0")
         self.componentValueInput.hide()
         self.componentValueInput.setValidator(self.validator)
-        self.componentValueInput.textEdited.connect(self.on_valueInputChanged)
-
-        self.componentFunctionDropDown = QtGui.QComboBox()
-        self.componentFunctionDropDown.currentIndexChanged.connect(self.on_valueDropDownChanged)
-        self.componentFunctionDropDown.addItem("Funktionsauswahl")
-        self.componentFunctionDropDown.addItem("Dummy-Funktion")
+        #self.componentValueInput.textEdited.connect(self.on_valueInputChanged)
 
         inputComponentLayout3.addWidget(self.componentValueLabel)
         inputComponentLayout3.addWidget(self.componentValueInput)
@@ -267,7 +222,6 @@ class Window(QtGui.QApplication):
         upperLayout.addWidget(containerCircuit)
         
         lowerLayout.addWidget(containerGraph)
-        
 
         mainLayout.addWidget(containerUpperLayout)
         mainLayout.addWidget(containerLowerLayout)     
@@ -275,11 +229,11 @@ class Window(QtGui.QApplication):
         self.main_window.setCentralWidget(containerMain)
 
         self.createNewCircuit()
-        #print(self.choosen)
-        #self.controler.createCircuit(self.choosen, self.function)
 
 
     def setAppIcon(self):
+        """This function loads and sets the application icon"""
+
         app_icon = QtGui.QIcon()
         app_icon.addFile(self.path + "\\resources\\favicon.ico")
         app_icon.addFile(self.path + "\\resources\\favicon.ico", QtCore.QSize(16,16))
@@ -291,6 +245,8 @@ class Window(QtGui.QApplication):
         self.main_window.setWindowIcon(app_icon)
 
     def setMenu(self):
+        """This function create the Window-Menue"""
+
         self.statusbar = self.main_window.statusBar()
     
         mainMenu = self.main_window.menuBar()
@@ -323,7 +279,6 @@ class Window(QtGui.QApplication):
         undoAction.setStatusTip("Undo the last Action")  
         undoAction.triggered.connect(self.undo)
         
-
         fileMenu.addAction(createNewAction)
         fileMenu.addAction(saveAction)
         fileMenu.addAction(loadAction)
@@ -333,10 +288,9 @@ class Window(QtGui.QApplication):
         mainMenu.setStyleSheet("#mainMenu{padding: 3px; border-bottom: 2px solid #0F9BA8; background-color:white}")
         
     def createFunctionDropwDowns(self):
-        """TODO  Einbauen listen Aller Funktionen"""
+        """This function creates the Drop-Downs for Function selection based ond the funcitonLib"""
 
-        all_functions = inspect.getmembers(functionLib, inspect.isfunction)   
-        print(all_functions)
+        all_functions = inspect.getmembers(functionLib, inspect.isfunction) 
 
         self.c_functions = []
         self.i_functions = []
@@ -359,19 +313,19 @@ class Window(QtGui.QApplication):
 
        
         self.function_c_DropwDown = QtGui.QComboBox()
-        self.function_c_DropwDown.addItem("Funktionsauswahl")
+        self.function_c_DropwDown.addItem("Choose Function")
         self.function_i_DropwDown = QtGui.QComboBox()
         self.function_i_DropwDownNew = QtGui.QComboBox()
-        self.function_i_DropwDown.addItem("Funktionsauswahl")
-        self.function_i_DropwDownNew.addItem("Funktionsauswahl")
+        self.function_i_DropwDown.addItem("Choose Function")
+        self.function_i_DropwDownNew.addItem("Choose Function")
         self.function_r_DropwDown = QtGui.QComboBox()
-        self.function_r_DropwDown.addItem("Funktionsauswahl")
+        self.function_r_DropwDown.addItem("Choose Function")
         self.function_v_DropwDown = QtGui.QComboBox()
         self.function_v_DropwDownNew = QtGui.QComboBox()
-        self.function_v_DropwDown.addItem("Funktionsauswahl")
-        self.function_v_DropwDownNew.addItem("Funktionsauswahl")
+        self.function_v_DropwDown.addItem("Choose Function")
+        self.function_v_DropwDownNew.addItem("Choose Function")
         self.function_l_DropwDown = QtGui.QComboBox()
-        self.function_l_DropwDown.addItem("Funktionsauswahl")
+        self.function_l_DropwDown.addItem("Choose Function")
 
         for functionTupel in self.c_functions:
             self.function_c_DropwDown.addItem(functionTupel[0])
@@ -390,52 +344,23 @@ class Window(QtGui.QApplication):
         for functionTupel in self.l_functions:
             self.function_l_DropwDown.addItem(functionTupel[0])
 
-        
         self.function_c_DropwDown.hide()
         self.function_i_DropwDown.hide()
         self.function_r_DropwDown.hide()
         self.function_v_DropwDown.hide()
         self.function_l_DropwDown.hide()
         
-    def creatPlotFigure(self):
-
-        self.figure = Figure()
-        self.figure.gca()
-
-        self.canvas = FigureCanvas(self.figure)
-               
-        self.pgGraph = pg.PlotWidget()
-        self.pgGraph.setObjectName("graph")
-
-
-        """font=QtGui.QFont()
-        font.setPixelSize(16)
-        plot = self.pgGraph.getPlotItem()
-        plot.getAxis("bottom").tickFont = font
-        plot.getAxis("bottom").setStyle(tickTextOffset = 20)
-        plot.getAxis("left").tickFont = font
-        plot.getAxis("left").setStyle(tickTextOffset = 20)
-        self.state = self.pgGraph.saveState()
-        # Just some button connected to `plot` method"""
-        self.buttonPlotPotenzial = QtGui.QPushButton('Plot Potenzial')
-        self.buttonPlotPotenzial.clicked.connect(self.plot2)
-        self.buttonPlotPotenzial.setFixedSize(100,20)
-
     def createCircuitFigure(self):
+        """This function creates the visiual representation of the circuit"""
 
         self.circuitFigure = Figure()
         self.circuitCanvas = FigureCanvas(self.circuitFigure)
-        #self.drawCircuit()
-        #self.circuitCanvas.resize(500,500)
+
 
         self.image = QtGui.QLabel()
         self.image.setGeometry(50, 40, 250, 250)
-        self.pixmap = QtGui.QPixmap(self.path + "\\resources\\ergebnis.png")
-        self.image.setPixmap(self.pixmap)
+
         self.image.setObjectName("imageCircuit")
-        #image.show()
-        
-        #self.updateGraph()
     
         self.scrollArea = QtGui.QScrollArea()
         self.scrollArea.setWidget(self.image)
@@ -443,23 +368,24 @@ class Window(QtGui.QApplication):
         self.scrollArea.setObjectName("scrollCircuit")
 
     def createDropDowns(self):
+        """This function creates multile Drop-Downs for the GUI. Mostly used for the input of components"""
 
         self.componentDropwDown = QtGui.QComboBox()
-        self.componentDropwDown.addItem("Widerstand")
-        self.componentDropwDown.addItem("Spule")
-        self.componentDropwDown.addItem("Kondensator")
-        self.componentDropwDown.addItem("Spannungsquelle")
-        self.componentDropwDown.addItem("Stromquelle")
+        self.componentDropwDown.addItem("Resistor")
+        self.componentDropwDown.addItem("Coil")
+        self.componentDropwDown.addItem("Capacitator")
+        self.componentDropwDown.addItem("V-Source")
+        self.componentDropwDown.addItem("I-Source")
         self.componentDropwDown.currentIndexChanged.connect(self.on_ComponentChanged)
 
         self.potenzialDropDownFrom = QtGui.QComboBox()
-        self.potenzialDropDownFrom.addItem("---Ausgangspotenzial---")
+        self.potenzialDropDownFrom.addItem("---Potencial From---")
         self.potenzialDropDownFrom.addItem("E-Last")
         self.potenzialDropDownFrom.addItem("E-Masse")
         self.potenzialDropDownFrom.setAutoCompletion(True)
         
         self.potenzialDropDownTo = QtGui.QComboBox()
-        self.potenzialDropDownTo.addItem("---Eingangspotenzial---")
+        self.potenzialDropDownTo.addItem("---Potencial To---")
         self.potenzialDropDownTo.addItem("E-Last")
         self.potenzialDropDownTo.addItem("E-Masse")
         self.potenzialDropDownFrom.setAutoCompletion(True)
@@ -476,19 +402,17 @@ class Window(QtGui.QApplication):
         self.potenzialDropDown.currentIndexChanged.connect(self.onPotencialChanged)
 
     def onPotencialChanged(self):
+        """Sets the choosen potencial for plotting graph when Potencial-Drop-Down changed"""
         self.potencial = self.potenzialDropDown.currentIndex()
 
-
     def createNewCircuit(self):
+        """This function handels the initial creating dialog for creating a new circuit"""
 
         all_functions = inspect.getmembers(functionLib, inspect.isfunction)   
         print(all_functions)
-
        
         self.i_functions = []
-        
         self.v_functions = []
-        
 
         for functionTupel in all_functions:
             
@@ -499,12 +423,10 @@ class Window(QtGui.QApplication):
                 self.v_functions.append(functionTupel)
 
 
-       
-       
         self.function_i_DropwDownNew = QtGui.QComboBox()
-        self.function_i_DropwDownNew.addItem("Funktionsauswahl")
+        self.function_i_DropwDownNew.addItem("Choose Function")
         self.function_v_DropwDownNew = QtGui.QComboBox()
-        self.function_v_DropwDownNew.addItem("Funktionsauswahl")
+        self.function_v_DropwDownNew.addItem("Choose Function")
         
        
         for functionTupel in self.i_functions:
@@ -542,11 +464,23 @@ class Window(QtGui.QApplication):
         
         self.initParametersDialog.exec()
 
-        
-        self.load(True) 
-        print(self.choosen)
+        self.controler = controler.Controler()
+        self.controler.createCircuit(self.choosen, self.function)
+
+        self.potenzialDropDownFrom.clear()
+        self.potenzialDropDownFrom.addItem("---Ausgangspotenzial---")
+        self.potenzialDropDownFrom.addItem("E-Last")
+        self.potenzialDropDownFrom.addItem("E-Masse")
+
+        self.potenzialDropDownTo.clear()
+        self.potenzialDropDownTo.addItem("---Eingangspotenzial---")
+        self.potenzialDropDownTo.addItem("E-Last")
+        self.potenzialDropDownTo.addItem("E-Masse")
+
+        self.updateGraph()
 
     def setStartingValues(self):
+        """Sets function when function-drop-downs changed. It has influence on the function for the starting element"""
         if self.choosen == 0:
             self.function = self.function_i_DropwDownNew.currentText()
         else:
@@ -554,6 +488,7 @@ class Window(QtGui.QApplication):
         self.initParametersDialog.close()
         
     def onNewDropChanged(self):
+        """Sets choosen when beginningCircuit - drop-down changed. It determins if the starting element is a voltage or a power-source"""
         self.choosen = self.beginningCircuit.currentIndex()
         if self.choosen == 1:
             self.function_v_DropwDownNew.show()
@@ -564,11 +499,11 @@ class Window(QtGui.QApplication):
             self.function_v_DropwDownNew.hide()
 
     def save(self):
+        """Saves the current project / current simulation without the simulation data"""
 
         objectsToSave = [self.controler, [self.potenzialDropDownFrom.itemText(i) for i in range(self.potenzialDropDownFrom.count())],  [self.potenzialDropDownTo.itemText(i) for i in range(self.potenzialDropDownTo.count())]]
         pathFileName = QtGui.QFileDialog.getSaveFileName(None, 'Load ECS-Project', self.path + '\\saved-circuits', 'pickle(*.pickle)')
  
-
         with open(pathFileName, 'wb') as handle:
             pickle.dump(objectsToSave, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
@@ -576,71 +511,37 @@ class Window(QtGui.QApplication):
         messagebox.exec_()
 
         self.statusbar.showMessage("File successfully saved", 5000)
-        #message = QtGui.QMessageBox()
-        #message.setIcon(QtGui.QMessageBox.Information)
-
-        #message.setText("This is a message box")
-        #message.setInformativeText("This is additional information")
-        #message.setWindowTitle("MessageBox demo")
-        #message.setDetailedText("The details are as follows:")
-        #message.setStandardButtons(QtGui.QMessageBox.Ok)
  
-    def load(self, isNew=False):
-
+    def load(self):
+        """This function handels the loading of a circuit"""
+        
         self.potenzialDropDown.hide()
         self.buttonPlotPotenzial.hide()
 
-        if not isNew:
-            pathFileName = QtGui.QFileDialog.getOpenFileName(None, 'Load ECS-Project', self.path + '\\saved-circuits', 'pickle(*.pickle)')
-            with open(pathFileName, 'rb') as handle:
-                loadedObjects = pickle.load(handle)
+        pathFileName = QtGui.QFileDialog.getOpenFileName(None, 'Load ECS-Project', self.path + '\\saved-circuits', 'pickle(*.pickle)')
+        with open(pathFileName, 'rb') as handle:
+            loadedObjects = pickle.load(handle)
 
-            messagebox = timedMessage.TimerMessageBox("Informaion", "File successfully loaded",2, self.main_window)
-            messagebox.exec_()
+        messagebox = timedMessage.TimerMessageBox("Informaion", "File successfully loaded",2, self.main_window)
+        messagebox.exec_()
 
-            self.statusbar.showMessage("File successfully loaded", 5000)
-        
-            self.controler = loadedObjects[0]
-            self.controler.drawCircuit()
-            self.updateGraph()
-            self.potenzialDropDownFrom.clear()
-            self.potenzialDropDownTo.clear()
+        self.statusbar.showMessage("File successfully loaded", 5000)
+    
+        self.controler = loadedObjects[0]
+        self.controler.drawCircuit()
+        self.updateGraph()
+        self.potenzialDropDownFrom.clear()
+        self.potenzialDropDownTo.clear()
 
-            self.potenzialDropDownFrom.addItems(loadedObjects[1])
-            self.potenzialDropDownTo.addItems(loadedObjects[2])
-
-            
-        else: 
-            #self.function = "i_constant"
-            self.controler = controler.Controler()
-            self.controler.createCircuit(self.choosen, self.function)
-
-            self.potenzialDropDownFrom.clear()
-            self.potenzialDropDownFrom.addItem("---Ausgangspotenzial---")
-            self.potenzialDropDownFrom.addItem("E-Last")
-            self.potenzialDropDownFrom.addItem("E-Masse")
-
-            self.potenzialDropDownTo.clear()
-            self.potenzialDropDownTo.addItem("---Eingangspotenzial---")
-            self.potenzialDropDownTo.addItem("E-Last")
-            self.potenzialDropDownTo.addItem("E-Masse")
-
-            self.updateGraph()
-
-        
-
-
-        #count = self.potenzialDropDownFrom.count()
-        #for i in range(-1,count+1):
-        #    print("hi")
-        #    self.potenzialDropDownFrom.removeItem(i)
-        #    self.potenzialDropDownTo.removeItem(i)
-        
+        self.potenzialDropDownFrom.addItems(loadedObjects[1])
+        self.potenzialDropDownTo.addItems(loadedObjects[2])
 
     def closeApplication(self):
+        """Closes the GUI"""
         self.quit()
         
     def undo(self):
+        """Undo the last modification to the circuit"""
 
         haveToRemove = self.controler.undoAddComponent()
         
@@ -651,13 +552,15 @@ class Window(QtGui.QApplication):
 
         self.updateGraph()
     
-    def on_valueInputChanged(self):
-        self.componentValueDropDown.setCurrentIndex(0)
+    """def on_valueInputChanged(self):
+        self.componentValueDropDown.setCurrentIndex(0)"""
 
     def on_valueDropDownChanged(self):
+        """Resets the written component value"""
         self.componentValueInput.setText("")
 
     def on_ComponentChanged(self):
+        """Makes certain input-field visible and hide others if the user selectets a different component"""
 
         self.function_c_DropwDown.hide()
         self.function_i_DropwDown.hide()
@@ -668,59 +571,58 @@ class Window(QtGui.QApplication):
         self.componentValueInput.hide()
         self.componentValueLabel.hide()
 
-        if self.componentDropwDown.currentText() == "Spule":
+        if self.componentDropwDown.currentText() == "Coil":
             self.componentValueInput.setText("0.0")
             self.componentValueInput.show()
             self.componentValueLabel.show()
 
             self.function_l_DropwDown.show()
 
-        elif self.componentDropwDown.currentText() == "Widerstand":
+        elif self.componentDropwDown.currentText() == "Resistor":
             self.function_r_DropwDown.show()
 
-        elif self.componentDropwDown.currentText() == "Kondensator":
+        elif self.componentDropwDown.currentText() == "Capacitator":
             self.function_c_DropwDown.show()
 
-        elif self.componentDropwDown.currentText() == "Spannungsquelle":
+        elif self.componentDropwDown.currentText() == "V-Source":
             self.function_v_DropwDown.show()
 
-        elif self.componentDropwDown.currentText() == "Stromquelle":
+        elif self.componentDropwDown.currentText() == "I-Source":
             self.function_i_DropwDown.show()
        #else:
             #self.componentValueInput.hide()
             #self.componentValueLabel.hide()
 
     def addComponentToCircuit(self):
+        """Handels the adding of a new component to the circuit"""
+
         component = (str(self.componentDropwDown.currentText()))
         function = "0"
 
-        if component == "Kondensator":
+        if component == "Capacitator":
             function = self.function_c_DropwDown.currentText()
 
-        if component == "Stromquelle":
+        if component == "I-Source":
             function = self.function_i_DropwDown.currentText()
 
-        if component == "Widerstand":
+        if component == "Resistor":
             function = self.function_r_DropwDown.currentText()
 
-        if component == "Spannungsquelle":
+        if component == "V-Source":
             function = self.function_v_DropwDown.currentText()
 
-        if component == "Spule":
+        if component == "Coil":
             function = self.function_l_DropwDown.currentText()
 
         direction = (str(self.directionDropwDown.currentText()))
         name = (str(self.componentNameInput.text()))
-        
-        print(self.potenzialDropDownTo.itemText(self.potenzialDropDownTo.currentIndex()))
-        print(self.potenzialDropDownTo.currentIndex())
+
         elabel = self.controler.addComponent(component, direction, name, self.potenzialDropDownFrom.currentIndex(), self.potenzialDropDownTo.currentIndex(), self.componentValueInput.text(), function)
 
 
         if len(elabel) > 0:
             self.potenzialDropDownFrom.addItem(elabel)
             self.potenzialDropDownTo.addItem(elabel)
-
 
         self.potenzialDropDownFrom.setCurrentIndex(0)
         self.potenzialDropDownTo.setCurrentIndex(0)
@@ -732,11 +634,13 @@ class Window(QtGui.QApplication):
         self.updateGraph()
   
     def updateGraph(self):
+        """Updates the current visual representation of the circuit"""
         
         self.pixmap = QtGui.QPixmap(self.path + "\\resources\\ergebnis.png")
         self.image.setPixmap(self.pixmap)
 
     def simulate(self):
+        """Collects all nessesary inputs to the start the simulation and starts it"""
 
         self.potenzialDropDown.clear()
         for x in range(len(self.list_potencialInputs)):
@@ -745,13 +649,13 @@ class Window(QtGui.QApplication):
         self.controler.setTValues(float(self.list_timeInputs[0].text()), float(self.list_timeInputs[1].text()))
 
         self.potenzialParameters.close()
-        #self.controler.simulate()
+
         try:
             self.controler.simulate()
             qt = QtGui.QMessageBox()
             qt.setIcon(QtGui.QMessageBox.Information)
             qt.setWindowTitle("Info")
-            qt.setText("Programm ist fertig durchgelaufen!")
+            qt.setText("Simulation was successfull!")
             qt.exec()
         except:
             qt = QtGui.QMessageBox()
@@ -767,8 +671,7 @@ class Window(QtGui.QApplication):
         self.buttonPlotPotenzial.show()
 
     def enterPotencialValues(self):   
-        #regexp_onlyDoubles = QtCore.QRegExp('^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$')
-        
+        """Creates the input fields for the starting values of the simulation"""
         
         self.potenzialParameters = QtGui.QDialog()
 
@@ -817,45 +720,29 @@ class Window(QtGui.QApplication):
 
 
         self.potenzialParameters.exec()
-        #self.load(True) 
-        print()
  
     def plot2(self):
+        """Plots the simulated data for a choosen potencial"""
 
         x = []
         y = []
         data = self.controler.getSolutionData()
-        print(data)
-        
+
         for entry in data:
-            #print(entry)
-            #input()
+
             x.append(entry[0][0][self.potencial])
             y.append(entry[1])
-        #self.pgGraph.restoreState(self.state)
-
-        #data = [random.random() for i in range(100)]
-        """plotItem = self.pgGraph.getPlotItem()
-        plotItem.clear()
-        
-        plotItem.plot(y, x, pen = pg.mkPen('#0F9BA8', width=3, style=QtCore.Qt.SolidLine) )
-        self.pgGraph.plot(x,y)"""
-
-        
+ 
         ax = self.figure.add_subplot(111)
-        
-
-        # discards the old graph
-        
+ 
         ax.clear()
 
-        #self.canvas.draw()
         ax.set_xlabel("Time")
         ax.set_ylabel("Potencial Value")
-        # plot data
+
         ax.plot(y,x)
         self.figure.tight_layout()
-        # refresh canvas
+
         self.canvas.draw()
         self.figure.delaxes(ax)
         
@@ -863,17 +750,7 @@ if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
 
     main = Window(sys.argv)
-    #main.showMaximized()
 
     sys.exit(app.exec_())
 
-    #currentExitCode = Window.EXIT_CODE_REBOOT
-    #while currentExitCode == Window.EXIT_CODE_REBOOT:
-    #    a = QtGui.QApplication(sys.argv)
-    #    w = Window(sys.argv)
-        #w.show()
-    #    currentExitCode = a.exec_()
-    #    a = None
-    #    a = QtGui.QApplication(sys.argv)
-    #    w = None
 

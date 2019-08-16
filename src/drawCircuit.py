@@ -52,19 +52,19 @@ class CircuitDrawing():
 
         sign = "?"
 
-        if component == "Spule":
+        if component == "Coil":
             componentType = e.INDUCTOR2
             sign = "L"
-        if component == "Widerstand":
+        if component == "Resistor":
             componentType = e.RBOX
             sign = "G"
-        if component == "Kondensator":
+        if component == "Capacitator":
             componentType = e.CAP
             sign = "C"
-        if component == "Spannungsquelle":
+        if component == "V-Source":
             componentType = e.SOURCE_V
             sign = "V"
-        if component == "Stromquelle":
+        if component == "I-Source":
             sign = "I"
             componentType = e.SOURCE_I
 

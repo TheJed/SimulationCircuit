@@ -1,6 +1,5 @@
 """
     This module handels the mathe behind the simulation
-    
     :copyright: (c) 2019 by Tobias Klein.
 """
 
@@ -792,7 +791,7 @@ class Solver:
         if type(self.er) == list:
             if len(self.er) == 1:
                 self.er = self.er[0]
-                
+
         self.er = optimize.newton(f, self.er,tol=1e-10, maxiter=50000, disp=False)
         e = self.zurueckcoppler(self.ec, self.er, t)
         self.solution.append(([e], t))

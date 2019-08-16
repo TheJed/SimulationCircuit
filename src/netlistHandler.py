@@ -1,9 +1,15 @@
+"""
+    This module handels the netlist and holds the circuit-object
+    :copyright: (c) 2019 by Tobias Klein.
+"""
+
 import sys
 import numpy as np
 from sympy import Matrix
 import functionLib
 
 class Transistor:
+    """Simple class to store capacitators"""
     def __init__(self, name, fluss_in, fluss_out, value, function):
         self.name = name
         self.fluss_in = fluss_in
@@ -12,6 +18,7 @@ class Transistor:
         self.function = function
 
 class Widerstand:
+    """Simple class to store resistors"""
     def __init__(self, name, fluss_in, fluss_out, value, function):
         self.name = name
         self.fluss_in = fluss_in
@@ -19,13 +26,8 @@ class Widerstand:
         self.value = value
         self.function = function
 
-    def __str__(self):
-        return "Widerstandname: " + self.name + " | Rein: " + str(self.fluss_in) + " | Raus: " + str(self.fluss_out) + "\n"
-
-    def __repr__(self):
-        return "Widerstandname: " + self.name + " | Rein: " + str(self.fluss_in) + " | Raus: " + str(self.fluss_out) + "\n"
-
 class Spule:
+    """Simple class to store coils"""
     def __init__(self, name, fluss_in, fluss_out, value, function):
         self.name = name
         self.fluss_in = fluss_in
@@ -34,6 +36,7 @@ class Spule:
         self.function = function
 
 class V:
+    """Simple class to store v-sources"""
     def __init__(self, name, fluss_in, fluss_out, value, function):
         self.name = name
         self.fluss_in = fluss_in
@@ -42,6 +45,7 @@ class V:
         self.function = function
 
 class Erzeuger:
+    """Simple class to store i-sources"""
     def __init__(self, name, fluss_in, fluss_out, value, function):
         self.name = name
         self.fluss_in = fluss_in
@@ -50,13 +54,20 @@ class Erzeuger:
         self.function = function
 
 class NetListHandler:
+    """This class handles and holds the netlist"""
 
     def __init__(self, *args, **kwargs):
+        """Inits the needed values"""
         super().__init__(*args, **kwargs)
-
         self.fileLines = []
 
     def readFile(self, filename):
+        """Reads a netlist
+
+        :param filename: Name of file for reading
+        :return: Netlist as list of strings
+        :rtype: list."""
+
         f = open(filename, "r")
         with open(filename) as f:
             content = f.readlines()
@@ -71,6 +82,9 @@ class NetListHandler:
         return(result)
 
     def writeFile(self, filename, potenzialNummer):
+        """ Writes the netlist to file
+
+        :param filename: Name of file to write to"""
 
         with open(filename, 'w') as f:
             for item in self.fileLines:
