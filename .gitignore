@@ -11,3 +11,7 @@ __pycache__/
 venv/
 .gitignore
 your_file.txt
+docs/
+src/dist
+src/build
+Anwenderdoku/
