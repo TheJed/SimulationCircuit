@@ -42,7 +42,7 @@ class Solver:
 
                 
         #-----------Delete voltage sources-----------
-        self.c_v = self.findeZusammenhangskomponente(self.inzidenz_v.transpose())
+        self.c_v = self.findConnectedComponents(self.inzidenz_v.transpose())
         self.q_v = self.createQArray(self.c_v, self.isMasse(self.inzidenz_v))
         self.p_v = self.createPArray(self.c_v, self.isMasse(self.inzidenz_v))
 
@@ -63,7 +63,7 @@ class Solver:
             self.ai_v = np.dot(self.q_v.transpose(), (self.inzidenz_i))
 
         #-----------Delete capacitors-----------
-        self.c_c = self.findeZusammenhangskomponente(np.array(self.ac_v).transpose())
+        self.c_c = self.findConnectedComponents(np.array(self.ac_v).transpose())
         self.q_c = self.createQArray(self.c_c, self.isMasse(self.ac_v))
         self.p_c = self.createPArray(self.c_c, self.isMasse(self.ac_v))
 
@@ -80,7 +80,7 @@ class Solver:
             self.ar_vc = np.dot(self.q_c.transpose(), self.ar_v)
 
         #-----------Delete Resistors-----------
-        self.c_r = self.findeZusammenhangskomponente(np.array(self.ar_vc).transpose())
+        self.c_r = self.findConnectedComponents(np.array(self.ar_vc).transpose())
         self.q_r = self.createQArray(self.c_r, self.isMasse(self.ar_vc))
         self.p_r = self.createPArray(self.c_r, self.isMasse(self.ar_vc))
 
@@ -287,7 +287,7 @@ class Solver:
         :param x: voltage-value
         :param t: actual point in time the simulation is at
         :return: Returns the builded function.
-        :rtype: function."""
+        :rtype: resistor values."""
 
         ergebnis = []
         for i in range(len(self.gr)):
@@ -377,7 +377,7 @@ class Solver:
 
         :param t: actual point in time the simulation is at
         :return: Returns the builded function.
-        :rtype: function."""
+        :rtype: voltage values."""
 
         ergebnis = []
         for function in self.vt:
@@ -423,6 +423,12 @@ class Solver:
         return function
 
     def i_s(self,t):
+        """This function returns the values of the power-sourcesfor a point in time
+        
+        :param t: actual point in time the simulation is at
+        :return: Returns the builded function.
+        :rtype: power-values."""
+
         ergebnis = []
         for function in self.it:
             ergebnis.append(function(t))
@@ -457,7 +463,6 @@ class Solver:
         ergebnis = -self.w_matrix.transpose().dot(self.inzidenz_l.transpose()).dot(self.p_v).dot(self.v_star(t))
         return ergebnis
 
-    #TODO mit anderen Solver auf Zeit vergleichen und austauschbar in eine Methode packen
     def e_l(self, e_c, e_r, t):
         """Calculates the e_l value (value of decoupled potenzials) based on e_c and e_r
         
@@ -473,7 +478,6 @@ class Solver:
         minuend3 = 0
         minuend4 = 0
 
-        #Leeres Transponieren??
         if not 0 in self.inzidenz_l.shape and not 0 in self.v_matrix:
             m = self.v_matrix.transpose().dot(self.al_vcr.transpose())
             if not 0 in self.p_c.shape:
@@ -484,20 +488,9 @@ class Solver:
                 minuend4 = m.dot(self.inzidenz_l.transpose()).dot(self.p_v).dot(self.v_star(t))
             minuend1 = self.v_matrix.transpose().dot(self.ableitung_l_nacht(self.w_matrix, t))
 
-
-            #if minuend1 == 0 and not 0 in minuend2.shape:
-            #    b = minuend2
-            #elif 0 in minuend2.shape and not 0 in minuend1.shape:
-            #    b = minuend1
-            #elif 0 in minuend1.shape and 0 in minuend2.shape:
-            #    b = []
-            #else:
-            b = np.subtract(minuend1, minuend2)
-            #if not 0 in minuend3.shape:    
+            b = np.subtract(minuend1, minuend2)  
             b = np.subtract(b, minuend3)
-            #if not 0 in minuend4.shape:
             b = np.subtract(b, minuend4)
-
             
             e_l = linalgSolver.cg(m,b)[0]
 
@@ -506,6 +499,11 @@ class Solver:
         return 0
 
     def jl_i(self, t):
+        """Calculates the j_li value (value of decoupled coils) for a specific point in time
+
+        :param t: actual point in time the simulation is at
+        :return: Returns calculated jl_i value.
+        :rtype: vector."""
 
         if 0 in self.inzidenz_l.shape:
             return np.zeros((1,0))
@@ -517,11 +515,15 @@ class Solver:
         e = LA.solve(m,b)
         return e
 
-    #TODO ungeklärt
     def startwertEntkopplung(self, e, t):
+        """This function decoppels the starting-potencials for simulation
+        
+        :param e: list of starting values for the potencials
+        :param t: actual point in time the simulation is at
+        """
         e = np.array(e)
 
-        #e_v bestimmen
+        #--------calculate e_v--------
         if not 0 in self.p_v.shape:
             m = self.q_v
             
@@ -532,7 +534,7 @@ class Solver:
             m = self.q_v
             self.e_v = linalgSolver.cg(m,e)[0]
 
-        #ec und e_c bestimmen
+        #--------calculate ec and e_c--------
 
         m = np.concatenate((self.p_c, self.q_c), axis= 1)
         temp = LA.solve(m,self.e_v)
@@ -547,7 +549,7 @@ class Solver:
             else:
                 self.e_c.append(temp[i])
 
-        #er und el bestimmen 
+        #--------calculate er and el-------- 
         m = np.concatenate((self.p_r, self.q_r), axis= 1)
         temp = LA.solve(m,self.e_c)
         self.er = []
@@ -557,17 +559,16 @@ class Solver:
                 self.er.append(temp[i])
             else:
                 el.append(temp[i])  
-
-        print(self.ec)
-        #Teste:
-        #PV eV 􀀀 QV PCeC 􀀀 QV QCPReR 􀀀 QV QCQReL
-        #k = self.p_v.dot(self.v_star(0)) + self.q_v.dot(self.p_c).dot(self.e_c) + self.q_v.dot(self.q_c).dot(self.p_r).dot(self.er)
-        #k = k + self.q_v.dot(self.q_c).dot(self.q_r).dot(el)
-
-        
-     
+      
     def zurueckcoppler(self, ec, er, t):
-        
+        """This function calculates the values of the potencials for a specific point in time based on the decoppeld potencial values
+
+        :param ec: decoppeld potencial value for capacitors
+        :param e_r: decoppeld potencial value for resistors
+        :param t: actual point in time the simulation is at
+        :return: Returns calculated potencial value.
+        :rtype: vector."""
+
         if type(ec) is np.float64:
             ec = [ec]
             
@@ -593,26 +594,33 @@ class Solver:
             summand4 = self.q_v.dot(self.q_c).dot(self.q_r).dot(self.e_l(ec,er,t))
 
         e = summand1 + summand2 + summand3 + summand4
-        print(e)
         return e
 
     def isMasse(self, inzidenz):
+        """This function checks if at least one component of a component group is connected to the mass-potencial
+        
+        :param inzidenz: the inzidenz matrix of the component group
+        :return: Returns if at least one component of a component group is connected to the mass-potencial.
+        :rtype: boolean."""
+        
         if 0 in inzidenz.shape:
             return False
         unique, count = np.unique(inzidenz, return_counts=True)
 
-        #Gibt nur noch zwei Potenziale und der Knoten liegt nur an einem an, weil andere Masse
+        #-------There are only two potencials left and one of them is the mass-potencial--------
         if(len(count) == 1):
-            #print("nur ein spezialfall")
             return True
         if(count[0] == count[-1]):
-            #print("False")
             return False
         else:
-            #print("True")
             return True
 
-    def findeZusammenhangskomponente(self, inzidenzMatrix):
+    def findConnectedComponents(self, inzidenzMatrix):
+        """This function calculates the connected components for a specific component group
+        
+        :param inzidenzMatrix: the inzidenz matrix of the component group
+        :return: Returns a list with the connected components
+        :rtype: list of integers."""
 
         if not inzidenzMatrix.tolist():
             potenzialListe = list(range(self.schaltung.potenzialNumber-1))
@@ -625,114 +633,74 @@ class Solver:
             potenzialListe, c_x = self.deepSearchComponent(potenzialListe, potenzialListe[0], inzidenzMatrix, 0)
             zusammenhangskomponenteListe.append(c_x)
 
-        print("ZusammenhangskomponentenListe:")
-        print(zusammenhangskomponenteListe)
         return zusammenhangskomponenteListe
 
-    def deepSearchComponent(self, notVisitedPotenziale, potenzial, inzidenzMatrix, zusammenhangskomponente):
-        if len(notVisitedPotenziale) == 0:
-            print("abbruch")
-            return notVisitedPotenziale, zusammenhangskomponente
+    def deepSearchComponent(self, notVisitedPotencials, potencial, inzidenzMatrix, zusammenhangskomponente):
+        """This function finds the connected components for a specific component group with depth-search
+        
+        :param notVisitedPotencials: list of unvisited potencials
+        :param potencial: current potencial
+        :param inzidenzMatrix: the inzidenzMatrix of the component group
+        :param zusammenhangscomponente: current number of connected components
+        :return: Returns a list with the unvisited potencials and the number of connected components
+        :rtype: list, integer."""
+
+        if len(notVisitedPotencials) == 0:
+            return notVisitedPotencials, zusammenhangskomponente
         zusammenhangskomponente += 1
-        notVisitedPotenziale.remove(potenzial)
+        notVisitedPotencials.remove(potencial)
 
         for element in inzidenzMatrix:
 
-            if element[potenzial] != 0:
+            if element[potencial] != 0:
 
-                if element[potenzial] * -1 in element.tolist():
-                    outputPotenzial = element.tolist().index(element[potenzial] * -1)
+                if element[potencial] * -1 in element.tolist():
+                    outputPotencial = element.tolist().index(element[potencial] * -1)
 
-                    if outputPotenzial in notVisitedPotenziale:
+                    if outputPotencial in notVisitedPotencials:
 
-                        notVisitedPotenziale, zusammenhangskomponente = self.deepSearchComponent(notVisitedPotenziale, outputPotenzial, inzidenzMatrix, zusammenhangskomponente)
+                        notVisitedPotencials, zusammenhangskomponente = self.deepSearchComponent(notVisitedPotencials, outputPotencial, inzidenzMatrix, zusammenhangskomponente)
             
-        return notVisitedPotenziale, zusammenhangskomponente
+        return notVisitedPotencials, zusammenhangskomponente
         
     def createQArray(self, c_x, isMasse):
-        print("Berechnung Q-Array:")
+        """This function calculates the Q-Array for component-groups. The Q-Array is a kernel of the inzidenz matrix from the component-group 
         
+        :param c_x: list of connected components
+        :param isMasse: is one of the components connected to the mass-potencial
+        :return: Returns the Q-Array
+        :rtype: np.array."""
+
         if(isMasse):
             if(len(c_x) == 1 and c_x[0] == 1):
                 print([])
                 return np.array([[1]])
-            #qArray = np.zeros((sum(c_x), self.schaltung.potenzialNumber-1))
-            #qArray = np.zeros((sum(c_x), len(c_x) + 1))
             qArray = np.zeros((sum(c_x), len(c_x)))
-            
         else:
-            #eigentlich - 2
-            #qArray = np.zeros((sum(c_x), self.schaltung.potenzialNumber-2))
             qArray = np.zeros((sum(c_x), len(c_x)))
-        
-        #Fülle die Q-Matrix
+
         zeile = 0
         for x in range(0, len(c_x)):
             for i in range (0,c_x[x]):
                 qArray[zeile][x] = 1
                 zeile += 1
-        print("Q-Array:")
-        print(qArray)
         return qArray
-    
-    def createPArray2(self, c_x, isMasse):
-        
-        #Bestimmme Groesse:
-        rows = 0
-        columns = 0
-        for x in c_x:
-            columns = columns + x-1
-        
-
-        c_x1 = [value-1 for value in c_x]
-        for x in c_x1:
-            rows += x + 1
-        if isMasse:
-            rows += 1
-            columns = columns + 1
-
-        #Erstelle Array entsprechend der Größe
-        dimension = (rows, columns)
-        pArray = np.zeros(dimension)
-
-        spalte = 0
-        zeile = 0
-
-        #Befülle Array
-        for x in c_x1:
-
-            i = x
-            while i > 0:
-                pArray[zeile][spalte] = 1
-                i = i -1
-                spalte+= 1
-                zeile += 1
-
-            zeile += 1
-
-
-        #Wenn einer der Componenten an der Masse anliegt, muss die Matrix noch erweitert werden
-        if(isMasse):
-            if(len(c_x) == 1 and c_x[0] == 1):
-                print([1])
-                return np.array([1])
-            pArray[len(pArray)-1][len(pArray[0])-1] = 1
-                
-        print("P-Array:")
-        print(pArray)
-        return pArray
 
     def createPArray(self, c_x, isMasse):
+
+        """This function calculates the P-Array for component-groups.
+        
+        :param c_x: list of connected components
+        :param isMasse: is one of the components connected to the mass-potencial
+        :return: Returns the P-Array
+        :rtype: np.array."""
 
         rows = 0
         columns = 0
         for x in c_x:
             columns = columns + x-1
             rows += x-1 + 1
-        #if isMasse:
-        #    rows += 1
-        #    columns = columns + 1
-
+        
         dimension = (rows, columns)
         pArray = np.zeros(dimension)
 
@@ -750,41 +718,26 @@ class Solver:
 
             zeile += 1
 
-
-        #Wenn einer der Componenten an der Masse anliegt, muss die Matrix noch erweitert werden
-        #if(isMasse):
-         #   if(len(c_x) == 1 and c_x[0] == 1):
-          #      print([1])
-           #     return np.array([1])
-            #pArray[len(pArray)-1][len(pArray[0])-1] = 1
-                
-        print("P-Array:")
-        print(pArray)
         return pArray
-
-
-
+        
     def cgSolve(self, x, t):
-      
-        #TODO rausnehmen und für shorty 2 also nur widerstaende simulationohne ode machen
-        no_x = False
-        j_li = []
-        if x[0] == 0:
-            ec = self.ec
-            no_x = True
-        else:
-            ec = []
-            
+        """This is function is part of the simulation and calculates new ec and jl_i values for a specific point in time
 
-            for i in range(len(x)):
-                if i<len(self.ec):
-                    ec.append(x[i])
-                else:
-                    j_li.append(x[i])        
-        #m = self.matrix(ec, j_li, t)
-        #print("M:", m.tolist())
+        :param x: vector consiting of ec and jl_i values
+        :param t: point in time
+        :return: Returns the new ec and jl_i values
+        :rtype: vector."""
+
+        j_li = []
+        ec = []
+    
+        for i in range(len(x)):
+            if i<len(self.ec):
+                ec.append(x[i])
+            else:
+                j_li.append(x[i])        
+
         e_r = self.newton(ec, t)
-        #b = self.function(ec, j_li , e_r , t)
 
         if not 0 in self.inzidenz_c.shape:
             mc = self.matrix_mc(ec, t)
@@ -804,42 +757,18 @@ class Solver:
         if not type(j_li) == list:
             j_li = j_li.tolist()
         
-
-        if no_x:
-            return x
         x_new = ec
         for i in j_li:
             x_new.append(i)
         return x_new
 
-        #Falsche, neue Idee
-        """if m.shape == (0,0):
-            if not 0 in b.shape:
-                x = b
-            #e = self.zurueckcoppler(x, e_r, t)
-            e = self.zurueckcoppler(x[0], e_r, t)
-            self.solution.append(([e], t))
-            return x
-               
-            
-        else:
-            x = linalgSolver.cg(m,b)
-            print("new x:", x)
-            x = x[0]
-            e = self.zurueckcoppler(x[0], e_r, t)
-            self.solution.append(([e], t))
-            return [x, 0]
-        #input()
-        #e = np.array(LA.solve(m,b))[0]
-        #print("Ergebnis der Simulation:", x)
-        #self.solution.append([x, self.er, t])"""
-       
-        
-        
-        #TODO hier fix für zweiten Parameter, wenn einer leer ist
-        
-
     def newton(self,ec, t):
+        """This is function is part of the simulation and calculates new er values for a specific point in time
+
+        :param ec: Old ec values
+        :param t: point in time
+        :return: new er value
+        :rtype: vector."""
         
         if 0 in self.inzidenz_r.shape:
             return self.er
@@ -847,18 +776,23 @@ class Solver:
         if type(self.er) == list:
             if len(self.er) == 1:
                 self.er = self.er[0]
-        #print("Hiiii", optimize.newton(f, self.e_r,tol=1e-10, maxiter=50000, full_output=True))
         self.er = optimize.newton(f, self.er,tol=1e-10, maxiter=50000, disp=False)
         return self.er
         
     def newton2(self, t):
+        """This is function is modified version of the other newton function and is choosen if a circuit has no capacitors and coils
+
+        :param t: point in time
+        :return: new er value
+        :rtype: vector."""
+
         if 0 in self.inzidenz_r.shape:
             return self.er
         f = lambda e_r: self.g_xyt(self.ec,e_r,t)
         if type(self.er) == list:
             if len(self.er) == 1:
                 self.er = self.er[0]
-        #print("Hiiii", optimize.newton(f, self.e_r,tol=1e-10, maxiter=50000, full_output=True))
+                
         self.er = optimize.newton(f, self.er,tol=1e-10, maxiter=50000, disp=False)
         e = self.zurueckcoppler(self.ec, self.er, t)
         self.solution.append(([e], t))
