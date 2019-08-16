@@ -107,7 +107,7 @@ class Controler:
         elif self.choosen == 1:
             if not any("#V1" in s for s in self.netHandler.fileLines):
                 self.netHandler.addLineToNetlist("V1", self.circuitDrawing.potenzialNummer, 0, 0.0, self.startFunction)
-        self.netHandler.writeFile(self.pathToRessources + "Schaltung.txt", self.circuitDrawing.potenzialNummer)
+        self.netHandler.writeFile(self.pathToRessources + "Schaltung.txt")
 
     def simulate(self):
         """Start the simulation by calling the solver"""

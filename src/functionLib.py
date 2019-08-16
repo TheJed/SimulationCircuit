@@ -1,3 +1,8 @@
+"""
+    This module is a library and stores just different functions for components
+    :copyright: (c) 2019 by Tobias Klein.
+"""
+
 import numpy as np
 import math
 

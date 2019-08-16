@@ -95,7 +95,7 @@ class Solver:
         self.v_matrix = np.array([])
         self.w_matrix = np.array([])
         if not 0 in self.inzidenz_l.shape:
-            self.v_matrix, self.w_matrix = createV_W_Matrix.tiefensuche(self.al_vcr)
+            self.v_matrix, self.w_matrix = createV_W_Matrix.createsVW_Matrices(self.al_vcr)
 
     def simulate(self, t, t_steps):
         """This function starts the simulation. 

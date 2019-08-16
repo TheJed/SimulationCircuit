@@ -1,15 +1,21 @@
+"""
+    This module creates the W and V Matrices
+    :copyright: (c) 2019 by Tobias Klein.
+"""
+
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
 import collections
 
 
-print("############################### Begin V W Matrix Berechnung ###############################")
-#u_matrix = np.array([[1,  -1, 1, 0, 0, 0], [-1, 1, 0, 0, -1, -1], [0, 0, -1, 1, 0, 1]])
-u_matrix = np.array([[-1., 1.]])
-#u_matrix = np.array([[-1,  1]])
 
 def erstelleSpannbaum(matrix):
+    """Creates a spanningtree for a given inzidenz-matrix
+    
+    :param matrix: inzidenz-matrix
+    :return: edges of spanningtree
+    :rtype: vector"""
     
     bauteile = [x for x in range(len(matrix[0]))]
     visitedList = []
@@ -22,59 +28,48 @@ def erstelleSpannbaum(matrix):
             if matrix[row][column] == 1:
                 liste.append(row)
                 x += 1
-        
-        #if x == 1:
-        #    liste.append(len(matrix))
 
         neuesBauteil = False
         for x in liste:
             if x not in visitedList:
                 visitedList.append(x)
                 neuesBauteil = True
-                #fertigeBauteile.append(column)
+                
         if neuesBauteil:
             fertigeBauteile.append(column)
 
-    print("visited Potenziale")
-    print(visitedList)
-    print("--------------------------")
-    print("Bauteile des Spanningtrees")
-    print(fertigeBauteile)
-    print("-----------------------")
     return fertigeBauteile
 
-def tiefensuche(u_matrix):
+def createsVW_Matrices(u_matrix):
+    """Handels the calculation of the V and W Matrix for a given inzidenz matrix
 
-    #Zeile für Masseknoten hinzufügen, der mal gelöscht wurde am Anfang
+    :param u_matrix: inzidenzmatrix
+    :return: V and W matrix
+    :rtype: tupel of matrices"""
+
+    #--------Add row for masspotencial--------
     k=u_matrix.sum(axis=0)
     k =  [i * -1 for i in k]
 
-    #Zeile zur Inzidenzmatrix hinzufügen
     u_matrix = np.vstack([k,u_matrix])
-    #u_matrix = np.vstack([u_matrix,k])
 
-    #Matrix kopieren
     matrix = np.array([elem for elem in u_matrix])
 
-    #Erstellen einer ungerichteten Inzidenzmatrix
+    #--------create an undirected inzidenz-matrix-------
     for row in range(len(matrix)):
         for column in range(len(matrix[0])):
             if matrix[row][column] == -1:
                 matrix[row][column] = 1
 
-    print("undirectedMatrix:")
-    print(matrix)
-    print(u_matrix)
 
-    #Berechnung des Spannungsbaums
+    #--------Calculate spanningtree--------
     fertigeBauteile = erstelleSpannbaum(matrix)
 
-    #Erstellung der Inzidenzmatritzen der Kanten des Spannungsbaums
+    #--------Create inzidenz-matrix of edges from spanningtree--------
     feb = [x for x in fertigeBauteile]
     
     spanningtree = np.array(u_matrix[:, feb.pop(0)])
     if not feb:
-        #transponieren, wenn spanningtree nur aus einer einzelnen Spalte besteht
         spanningtree = np.array(spanningtree).reshape(len(spanningtree),1)
     else:
         for element in feb:
@@ -83,18 +78,8 @@ def tiefensuche(u_matrix):
            
             spanningtree = np.column_stack((spanningtree,k))
             
-    """k= spanningtree.sum(axis=0).tolist()
-    if type(k) is list:
 
-        k =  [i * -1 for i in k]
-    else:
-        k = [i * -1 for i in spanningtree]"""
-    
-    #Inzidenzmatritzen des Spannungsbaums
-    #spanningtree = np.vstack([spanningtree,k])
-    print("Spanningtree93:", spanningtree)
-
-    #Umformung des Spannungsbaums in eine Liste aus Tupel aus Potenzialen
+    #--------Transform spanningtree in list of tupels--------
     tupelList = []
     for column in range(len(spanningtree[0])):
         temp = []
@@ -105,17 +90,14 @@ def tiefensuche(u_matrix):
                 temp.append(row)
         tupelList.append((temp))
 
-    #print("Tupellist",tupelList)
-    #Erstellung einer Liste von Bauteilen, welche nicht im Spannungsbaum sind
+    #--------create list of components, which are not part of the spanningtree--------
     bauteile = [x for x in range(len(matrix[0]))]
     for x in fertigeBauteile:
          bauteile.remove(x)
 
-    print("Bauteile nicht im Spanningtree:",bauteile)
-    #print("-------------------------------------")
-    #Erstellung der Loop
 
-    #Die, welche zum Masseknoten führen, können niemals in einer Loop sein und können daher raus
+
+    #Remove?
     for x in range(len(tupelList)):
         if len(tupelList[x]) == 1:
             tupelList.remove(tupelList[x])
@@ -124,9 +106,9 @@ def tiefensuche(u_matrix):
     loopList = []
     kantenList = []
 
+    #--------Create Loops--------
     for loop in bauteile:
         tempBauteileImLoop = [x for x in fertigeBauteile]
-        #print("tempBauteileImLoop:", tempBauteileImLoop)
         tempBauteileImLoop.append(loop)
         tempTupelList = [x for x in tupelList]
         temp = []
@@ -137,26 +119,21 @@ def tiefensuche(u_matrix):
                 temp.append(row)
         tempTupelList.append(temp)
 
-            #Die, welche zum Masseknoten führen, können niemals in einer Loop sein und können daher raus
+        #Remove?
         for x in range(len(tempTupelList)):
             if len(tempTupelList[x]) == 1:
                 tempTupelList.remove(tempTupelList[x])
         
-        #Nur Loop, wenn die einwegigen Kanten (Wegen Masse) rausgenommen wurden und die Liste nicht der des SPannungsbaums entspricht
         if not (tempTupelList) == (tupelList):
             
             unique, counts = np.unique(tempTupelList, return_counts=True)
-            print("tempTupelList:", tempTupelList)
-            #print("140:",np.unique(tempTupelList, return_counts=True))
+           
             while any(n % 2 == 1 for n in counts):
                 x = reduziere(tempTupelList, unique, counts)
                 tempTupelList.remove(tempTupelList[x])
                 tempBauteileImLoop.remove(tempBauteileImLoop[x])
                 unique, counts = np.unique(tempTupelList, return_counts=True)
-            #print("Ergebnis")
-            #print("Kanten im Loop;", tempBauteileImLoop)
-            #print("Tupelliste:", tempTupelList)
-            #print("--------------")
+
             loopList.append(tempTupelList)
             kantenList.append(tempBauteileImLoop)
     w_matrix = buildWMatrix(loopList, kantenList, len(u_matrix[0]), u_matrix)
@@ -165,59 +142,63 @@ def tiefensuche(u_matrix):
 
 
 def reduziere(tempTupelList, unique, counts):
-    #print("reduziere")
-    #print(tempTupelList)
+    """This function reduces a graph represented by the tupellist so, that it only contains a loop and no other edges
+    
+    :param tempTupelList: List of tupels representaing the current edges in the graph
+    :param unique: List of unique numbers in tempTupelList
+    :param counts: Counts of unique numbers in tempTupelList
+    :return: Reduced tempTupelList
+    :rtype: List"""
+
     i = (counts.tolist().index(1))
     for x in range(len(tempTupelList)):
         if unique[i] in tempTupelList[x]:
             return x
-            #tempTupelList.remove(tempTupelList[x])
-            #break;
-    #print(tempTupelList)
-    #return tempTupelList
+
     
 def buildWMatrix(loopList, kantenList, numberOfKanten, u_matrix):
+    """Creates the W-Matrix based on the loops
+
+    :param loopList: List of Loops
+    :param kantenList: List of edges in loops
+    :parm numberOfKanten: Number of edges in graph
+    :param u_matrix: Inzidenz-Matrix of graph
+    :return: W-Matrix
+    :rtype: Array"""
+
     w_matrix = []
     for x in range(len(loopList)):
         
-        print("Loop:", loopList[x])
         loopCopy = loopList[x].copy()
         loopKanten = kantenList[x].copy()
         directionDic = {loopKanten[0] : 1}
-        #direction = 1
-        #directionList = [1]
+
         toPotenzial = loopCopy[0][1]
         loopCopy.pop(0)
         loopKanten.pop(0)
-        #print(loopCopy)        
-        #print(toPotenzial)
+
         while len(loopCopy) > 0:
-            #print("Loopkanten", loopKanten)
-            #finde nächste Kante für den Loop
+
             kante = 0
             for i in range(len(loopCopy)):
                 if toPotenzial in loopCopy[i]:
                     kante = i
-                    #print("kante", kante)
                     break
             
             if toPotenzial == loopCopy[kante][0]:
-                #directionList.append(1)
+
                 toPotenzial = loopCopy[kante][1]
                 loopCopy.pop(kante)
                 k = loopKanten.pop(kante)
                 directionDic[k] = 1
 
             else:
-                #direction = direction * -1
-                #directionList.append(-1)
+
                 toPotenzial = loopCopy[kante][0]
                 loopCopy.pop(kante)
                 k = loopKanten.pop(kante)
                 directionDic[k] = -1
-                #print("loopCopy-Reduziert:", loopCopy)
-        #print("Direction-List:", directionList)
-        #print("Dic", directionDic)
+                
 
         w_eintrag = []
         for kante in range(numberOfKanten):
@@ -225,32 +206,29 @@ def buildWMatrix(loopList, kantenList, numberOfKanten, u_matrix):
                 w_eintrag.append(directionDic[kante])
             else:
                 w_eintrag.append(0)
-        #print(w_eintrag)
+      
         w_matrix.append(w_eintrag)
 
-    w_matrix = np.array(w_matrix)
-    print("W-Matrix: \n", w_matrix.T)
-
-    #TODO hier schöner machen
     if not w_matrix.tolist():
         return np.array([[]])
     return w_matrix
 
 def buildVMatrix(spanningtreeKanten, loops):
+    """Creates the V-Matrix based on the loops
+
+    :param spanningtreeKanten: Edges of spanningtree
+    :parm loops: list of loops
+    :return: V-Matrix
+    :rtype: Array"""
 
     v_matrix = np.zeros((len(spanningtreeKanten) + len(loops), len(spanningtreeKanten)))
     for x in range(len(spanningtreeKanten)):
-        print(x)
-        print(spanningtreeKanten[x])
+
         v_matrix[spanningtreeKanten[x]][x] = 1
-    print("V_Matrix:\n", v_matrix)
+
     return v_matrix
 
 
-
-
-
-#tiefensuche(u_matrix)
 
 
         

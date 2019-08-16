@@ -81,7 +81,7 @@ class NetListHandler:
 
         return(result)
 
-    def writeFile(self, filename, potenzialNummer):
+    def writeFile(self, filename):
         """ Writes the netlist to file
 
         :param filename: Name of file to write to"""
@@ -92,13 +92,28 @@ class NetListHandler:
                 f.write("%s\n" % item) 
     
     def addLineToNetlist(self, name, eFromIndex, eToIndex, value, function):
+        """ Add a new component to the netlist
+
+        :param name: Name of new component
+        :param eFromIndex: Potencial, where the power comes in the new component
+        :param eToIndex: Potencial, where the power goes to
+        :param value: Starting value of component (currently only for coils)
+        :param function: Behavior of component"""
+
         self.fileLines.append("#" + str(name) + "-" + str(eFromIndex) + "-" + str(eToIndex) + "-" + str(value) + "-" + str(function))
 
     def addPotencialLineToNetList(self, name, value):
+        """Adds a new potencial to the netlist
+        
+        :param name: name of potencial
+        :param value: value of potencial"""
         self.fileLines.append("#" + str(name) + "-" + str(value))
     
 class Schaltung:
+    """This class holds the circuit"""
     def __init__(self, input_data):
+
+        """Init the circuit values based on the values of the netlist"""
         self.input_data = input_data
         self.transitoren = []
         self.widerstaende = []
@@ -116,9 +131,7 @@ class Schaltung:
 
         maxPotenzialNr = 0
         for element in input_data:
-            print(element)
-            
-            #Widerstand
+           
             if element[0] == "G":
                 name, fluss_in, fluss_out, value, function = element.split("-")
                 temp_widerstand = Widerstand(name, int(fluss_in), int(fluss_out), value, function)
@@ -156,14 +169,13 @@ class Schaltung:
         self.potenzialNumber = maxPotenzialNr
     
     def initInzidenzMatritzen(self):
+        """Inits the inzidenz-matrices of the circuit"""
         
         maxPotenzialNr = self.potenzialNumber
         masseknoten = 0
-        #masseknoten = self.potenzialNumber-1
-        #Transitoren
+
 
         self.inzidenz_c = np.zeros((len(self.transitoren), maxPotenzialNr))
-        print(self.inzidenz_c)
 
         for i in range(len(self.transitoren)):
             transistor = self.transitoren[i]
@@ -171,11 +183,8 @@ class Schaltung:
             self.inzidenz_c[i][transistor.fluss_in] = 1
             self.inzidenz_c[i][transistor.fluss_out] = -1
 
-        
-        #Widerstaende
         self.inzidenz_g = np.zeros((len(self.widerstaende), maxPotenzialNr))
 
-        print(self.widerstaende)
         for i in range(len(self.widerstaende)):
             widerstand = self.widerstaende[i]
             
@@ -183,8 +192,6 @@ class Schaltung:
             self.inzidenz_g[i][widerstand.fluss_out] = -1
 
 
-
-        #Spulen
         self.inzidenz_l = np.zeros((len(self.spulen), maxPotenzialNr))
         for i in range(len(self.spulen)):
             spule = self.spulen[i]
@@ -193,8 +200,6 @@ class Schaltung:
             self.inzidenz_l[i][spule.fluss_out] = -1
 
 
-
-        #Vs
         self.inzidenz_v = np.zeros((len(self.vs), maxPotenzialNr))
 
         for i in range(len(self.vs)):
@@ -212,44 +217,22 @@ class Schaltung:
             self.inzidenz_i[i][erzeug.fluss_in] = 1
             self.inzidenz_i[i][erzeug.fluss_out] = -1
 
-        #self.inzidenz_c = np.array(self.inzidenz_c)
-        #if(len(self.inzidenz_c) != 0):
-        #    print(self.inzidenz_c)
         self.inzidenz_c = np.delete(self.inzidenz_c, masseknoten, 1).transpose()
 
-        #self.inzidenz_g = np.array(self.inzidenz_g)
-        #if(len(self.inzidenz_g) != 0):
         self.inzidenz_g = np.delete(self.inzidenz_g, masseknoten, 1).transpose()
 
-        #self.inzidenz_i = np.array(self.inzidenz_i)
-        #if(len(self.inzidenz_i) != 0):
         self.inzidenz_i = np.delete(self.inzidenz_i, masseknoten, 1).transpose()
 
-        #self.inzidenz_l = np.array(self.inzidenz_l)
-        #if(len(self.inzidenz_l) != 0):
         self.inzidenz_l = np.delete(self.inzidenz_l, masseknoten, 1).transpose()
 
-        #self.inzidenz_v = np.array(self.inzidenz_v)
-        #if(len(self.inzidenz_v) != 0):
         self.inzidenz_v = np.delete(self.inzidenz_v, masseknoten, 1).transpose()
 
-        
-        print("Transistoren")
-        print(self.inzidenz_c)
-
-        print("Widerstände")
-        print(self.inzidenz_g)
-
-        print("Spulen")
-        print(self.inzidenz_l)
-
-        print("V`s")
-        print(self.inzidenz_v)
-
-        print("Stromquellen")
-        print(self.inzidenz_i)
-
     def getGr(self):
+        """Provides all the functions from the resistors of the circuit
+
+        :return: List of all the resistor functions
+        :rtype: vector"""
+
         listOfFunctions = []
         for widerstand in self.widerstaende:
             functionVector = getattr(functionLib, widerstand.function)()
@@ -257,6 +240,11 @@ class Schaltung:
         return listOfFunctions
 
     def getV_t(self):
+        """Provides all the functions from the v-sources of the circuit
+
+        :return: List of all the v-sources functions
+        :rtype: vector"""
+
         listOfFunctions = []
         for v in self.vs:
             functionVector = getattr(functionLib, v.function)()
@@ -264,6 +252,11 @@ class Schaltung:
         return listOfFunctions
 
     def getI_t(self):
+        """Provides all the functions from the i-sources of the circuit
+
+        :return: List of all the i-sources functions
+        :rtype: vector"""
+
         listOfFunctions = []
         for i in self.erzeuger:
             functionVector = getattr(functionLib, i.function)()
@@ -271,16 +264,24 @@ class Schaltung:
         return listOfFunctions
 
     def getC_dx(self):
+        """Provides all the derivative (regarding x) functions from the capacitors of the circuit
+
+        :return: List of all the capacitator functions
+        :rtype: vector"""
         listOfFunctions = []
         
         
         for c in self.transitoren:
-            print(getattr(functionLib, c.function)())
             functionVector = getattr(functionLib, c.function)()
             listOfFunctions.append(functionVector[1])
         return listOfFunctions
 
     def getC_dt(self):
+        """Provides all the derivative (regarding time) functions from the capacitors of the circuit
+
+        :return: List of all the capacitator functions
+        :rtype: vector"""
+
         listOfFunctions = []
         for c in self.transitoren:
             
@@ -289,6 +290,11 @@ class Schaltung:
         return listOfFunctions
 
     def getL_dx(self):
+        """Provides all the derivative (regarding x) functions from the coils of the circuit
+
+        :return: List of all the coils functions
+        :rtype: vector"""
+
         listOfFunctions = []
         for l in self.spulen:
             functionVector = getattr(functionLib, l.function)()
@@ -296,6 +302,11 @@ class Schaltung:
         return listOfFunctions
 
     def getL_dt(self):
+        """Provides all the derivative (regarding t) functions from the coils of the circuit
+
+        :return: List of all the coils functions
+        :rtype: vector"""
+
         listOfFunctions = []
         for l in self.spulen:
             functionVector = getattr(functionLib, l.function)()
@@ -303,6 +314,10 @@ class Schaltung:
         return listOfFunctions
 
     def getjl(self):
+        """Provides the starting values of jl
+        :return: Staring jl - values
+        :rtype: vector"""
+
         if not self.spulen:
             return np.zeros((0,1))
 
