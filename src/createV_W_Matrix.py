@@ -50,8 +50,8 @@ def tiefensuche(u_matrix):
     k =  [i * -1 for i in k]
 
     #Zeile zur Inzidenzmatrix hinzufügen
-    #Am 1..08 weggenommen
     u_matrix = np.vstack([k,u_matrix])
+    #u_matrix = np.vstack([u_matrix,k])
 
     #Matrix kopieren
     matrix = np.array([elem for elem in u_matrix])

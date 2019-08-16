@@ -139,7 +139,7 @@ class Solver:
         #TODO eigentlich Vektor und kein Skalar
         #ec = [2]
         #e_r = [0,0]
-        j_li = self.j_li(self.jl)
+        j_li = self.jl_i(self.jl)
         #x = ec
         t = 10
         #self.solve(ec, j_li)
@@ -556,7 +556,7 @@ class Solver:
 
         return 0
 
-    def j_li(self, t):
+    def jl_i(self, t):
 
         if 0 in self.inzidenz_l.shape:
             return np.zeros((1,0))

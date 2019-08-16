@@ -67,6 +67,7 @@ class Window(QtGui.QApplication):
         self.potenzialList = []
         self.currentPotenzial = 1
         self.wasFullyConnectedBeforeUndo = []
+        self.potencial = 0
         
         self.controler = controler.Controler()
 
@@ -133,7 +134,7 @@ class Window(QtGui.QApplication):
         #----------------------------Main-Menue------------------------------#
 
         self.setMenu()
-
+        self.createDropDowns()
         #----------------------------Graph-Layout----------------------------#
         #Layout für die Anzeige des Graphen
 
@@ -166,11 +167,19 @@ class Window(QtGui.QApplication):
         
         self.buttonPlotPotenzial = QtGui.QPushButton('Plot First Potenzial ')
         self.buttonPlotPotenzial.clicked.connect(self.plot2)
+        self.buttonPlotPotenzial.hide()
         self.buttonPlotPotenzial.setFixedSize(120,20)
 
+        graphInputLayout = QtGui.QHBoxLayout()
+        graphInputLayout.addWidget(self.potenzialDropDown)
+        graphInputLayout.addWidget(self.buttonPlotPotenzial)
+
+        graphInputWidget = QtGui.QWidget()
+        graphInputWidget.setLayout(graphInputLayout)
+        graphInputWidget.setFixedSize(350,30)
         
         graphLayout.addWidget(self.toolbar)
-        graphLayout.addWidget(self.buttonPlotPotenzial)
+        graphLayout.addWidget(graphInputWidget)
         graphLayout.addWidget(self.canvas)
         
 
@@ -187,7 +196,7 @@ class Window(QtGui.QApplication):
 
         inputNameLayout = QtGui.QHBoxLayout()
 
-        self.createDropDowns()
+        
         self.createFunctionDropwDowns()
 
         self.componentNameInputLabel = QtGui.QLabel("Name des Bauteils")
@@ -445,14 +454,14 @@ class Window(QtGui.QApplication):
 
         self.potenzialDropDownFrom = QtGui.QComboBox()
         self.potenzialDropDownFrom.addItem("---Ausgangspotenzial---")
-        self.potenzialDropDownFrom.addItem("Masse")
-        self.potenzialDropDownFrom.addItem("E0")
+        self.potenzialDropDownFrom.addItem("E-Last")
+        self.potenzialDropDownFrom.addItem("E-Masse")
         self.potenzialDropDownFrom.setAutoCompletion(True)
         
         self.potenzialDropDownTo = QtGui.QComboBox()
         self.potenzialDropDownTo.addItem("---Eingangspotenzial---")
-        self.potenzialDropDownTo.addItem("Masse")
-        self.potenzialDropDownTo.addItem("E0")
+        self.potenzialDropDownTo.addItem("E-Last")
+        self.potenzialDropDownTo.addItem("E-Masse")
         self.potenzialDropDownFrom.setAutoCompletion(True)
 
         self.directionDropwDown = QtGui.QComboBox()
@@ -460,6 +469,15 @@ class Window(QtGui.QApplication):
         self.directionDropwDown.addItem("right")
         self.directionDropwDown.addItem("up")
         self.directionDropwDown.addItem("down")
+
+        self.potenzialDropDown = QtGui.QComboBox()
+        self.potenzialDropDown.setFixedSize(200,20)
+        self.potenzialDropDown.hide()
+        self.potenzialDropDown.currentIndexChanged.connect(self.onPotencialChanged)
+
+    def onPotencialChanged(self):
+        self.potencial = self.potenzialDropDown.currentIndex()
+
 
     def createNewCircuit(self):
 
@@ -569,6 +587,8 @@ class Window(QtGui.QApplication):
  
     def load(self, isNew=False):
 
+        self.potenzialDropDown.hide()
+        self.buttonPlotPotenzial.hide()
 
         if not isNew:
             pathFileName = QtGui.QFileDialog.getOpenFileName(None, 'Load ECS-Project', self.path + '\\saved-circuits', 'pickle(*.pickle)')
@@ -597,13 +617,13 @@ class Window(QtGui.QApplication):
 
             self.potenzialDropDownFrom.clear()
             self.potenzialDropDownFrom.addItem("---Ausgangspotenzial---")
-            self.potenzialDropDownFrom.addItem("Masse")
-            self.potenzialDropDownFrom.addItem("E0")
+            self.potenzialDropDownFrom.addItem("E-Last")
+            self.potenzialDropDownFrom.addItem("E-Masse")
 
             self.potenzialDropDownTo.clear()
             self.potenzialDropDownTo.addItem("---Eingangspotenzial---")
-            self.potenzialDropDownTo.addItem("Masse")
-            self.potenzialDropDownTo.addItem("E0")
+            self.potenzialDropDownTo.addItem("E-Last")
+            self.potenzialDropDownTo.addItem("E-Masse")
 
             self.updateGraph()
 
@@ -718,6 +738,7 @@ class Window(QtGui.QApplication):
 
     def simulate(self):
 
+        self.potenzialDropDown.clear()
         for x in range(len(self.list_potencialInputs)):
             self.controler.addPotencialValue("E" + str(x), self.list_potencialInputs[x].text())
 
@@ -737,6 +758,12 @@ class Window(QtGui.QApplication):
             qt.setWindowTitle("An Error Occured")
             qt.setText("The circuit could not be simulated \nThe circuit might not be valid")
             qt.exec()"""
+
+        for potencial in range(len(self.potenzialDropDownFrom)-2):
+            self.potenzialDropDown.addItem("Potencial " + str(potencial))
+
+        self.potenzialDropDown.show()
+        self.buttonPlotPotenzial.show()
 
     def enterPotencialValues(self):   
         #regexp_onlyDoubles = QtCore.QRegExp('^([01]?[0-9]?[0-9]|2[0-4][0-9]|25[0-5])$')
@@ -786,7 +813,7 @@ class Window(QtGui.QApplication):
         print()
  
     def plot2(self):
-        potenzial = 0
+
         x = []
         y = []
         data = self.controler.getSolutionData()
@@ -795,7 +822,7 @@ class Window(QtGui.QApplication):
         for entry in data:
             #print(entry)
             #input()
-            x.append(entry[0][0][potenzial])
+            x.append(entry[0][0][self.potencial])
             y.append(entry[1])
         #self.pgGraph.restoreState(self.state)
 

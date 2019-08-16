@@ -39,8 +39,8 @@ class CircuitDrawing():
             k = self.circuitDrawing.add(e.SOURCE_I, label="I1", d="left", reverse = True)
         else:
             k = self.circuitDrawing.add(e.SOURCE_V, label="V1", d="left", reverse = True)
-        self.potenzialList.append(self.circuitDrawing.add(e.DOT, label = "E_Masse", xy = k.end ))
-        self.potenzialList.append(self.circuitDrawing.add(e.DOT, label = "E0", xy = k.start))
+        self.potenzialList.append(self.circuitDrawing.add(e.DOT, label = "E-Last", xy = k.end ))
+        self.potenzialList.append(self.circuitDrawing.add(e.DOT, label = "E-Masse", xy = k.start))
 
     
 
@@ -80,7 +80,6 @@ class CircuitDrawing():
             self.circuitDrawing.labelI(k, name)
             self.wasFullyConnectedBeforeUndo.append(True)
             self.fromPotenzial = eFromIndex-1
-            print("a")
         elif eFromIndex-1 > 0 and eToIndex-1 < 0:
             k = self.circuitDrawing.add(componentType, d=direction, xy=eFrom.start)
             self.circuitDrawing.labelI(k, name)
