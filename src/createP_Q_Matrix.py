@@ -63,7 +63,6 @@ def createQArray(c_x, isMasse):
 
     if(isMasse):
         if(len(c_x) == 1 and c_x[0] == 1):
-            print([])
             return np.array([[1]])
         qArray = np.zeros((sum(c_x), len(c_x)))
     else:

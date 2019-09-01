@@ -226,6 +226,7 @@ class Solver:
         return matrix
 
     def function1(self, ec, jl_i, e_r, t):
+
         """This function provides a for the simulation nessesary function (simulation of capacitors).
         Therefore it contains no business-logic, only simple math-operations to build the function
         
@@ -496,7 +497,7 @@ class Solver:
             
             e_l = linalgSolver.cg(m,b)[0]
 
-            return e_l
+            return e_l.dot(-1)
 
         return 0
 
@@ -518,6 +519,7 @@ class Solver:
         return e
 
     def startwertEntkopplung(self, e, t):
+
         """This function decoppels the starting-potencials for simulation
         
         :param e: list of starting values for the potencials
@@ -565,6 +567,7 @@ class Solver:
         return [self.v_star(t), self.ec, self.er, el] 
       
     def zurueckcoppler(self, ec, er, t):
+
         """This function calculates the values of the potencials for a specific point in time based on the decoppeld potencial values
 
         :param ec: decoppeld potencial value for capacitors
@@ -585,7 +588,7 @@ class Solver:
 
         summand2 = 0
         if not 0 in self.q_v.shape and 0 not in self.p_c.shape:
-            summand2 = self.q_v.dot(self.p_c).dot(ec)
+            summand2 = self.q_v.dot(self.p_c).dot(ec).transpose()
 
         summand3 = 0
         
@@ -635,18 +638,18 @@ class Solver:
                 ec.append(x[i])
             else:
                 j_li.append(x[i])        
-
+        
         e_r = self.newton(ec, t)
-
+        
         if not 0 in self.inzidenz_c.shape:
             mc = self.matrix_mc(ec, t)
             if not 0 in mc.shape:
-                ec = linalgSolver.cg(mc, self.function1(ec, j_li, e_r, t))[0]
+                ec = linalgSolver.cg(mc, self.function1(ec, j_li, e_r, t).dot(-1))[0]
 
         if not 0 in self.inzidenz_l.shape:
             ml = self.matrix_ml(j_li, t)
             if not 0 in ml.shape:
-                j_li = linalgSolver.cg(ml, self.function2(ec, j_li, e_r, t))[0]
+                j_li = linalgSolver.cg(ml, self.function2(ec, j_li, e_r, t).dot(-1))[0]
 
         e = self.zurueckcoppler(ec, e_r, t)
         self.solution.append(([e], t))

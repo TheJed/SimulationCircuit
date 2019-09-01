@@ -99,7 +99,7 @@ class Controler:
         """Tells the drawing to draw the circuit"""
         self.circuitDrawing.draw()
 
-    def writeNetList(self):
+    def writeNetList(self, filename):
         """Adds the last information to the netlist and calls the nethandler to write the file"""
 
         if self.choosen == 0:
@@ -108,13 +108,13 @@ class Controler:
         elif self.choosen == 1:
             if not any("#V1" in s for s in self.netHandler.fileLines):
                 self.netHandler.addLineToNetlist("V1", self.circuitDrawing.potenzialNummer, 0, 0.0, self.startFunction)
-        self.netHandler.writeFile(self.pathToRessources + "Schaltung.txt")
+        self.netHandler.writeFile(self.pathToRessources + filename)
 
-    def simulate(self):
+    def simulate(self, filename):
         """Start the simulation by calling the solver"""
-        self.writeNetList()
+        
        
-        input_data = self.netHandler.readFile(self.pathToRessources + "Schaltung.txt")
+        input_data = self.netHandler.readFile(self.pathToRessources + filename)
         schaltung = nt.Schaltung(input_data)
         schaltung.initInzidenzMatritzen()
 

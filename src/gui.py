@@ -652,7 +652,8 @@ class Window(QtGui.QApplication):
         self.potenzialParameters.close()
 
         try:
-            self.controler.simulate()
+            self.controler.writeNetList("Schaltung.txt")
+            self.controler.simulate("Schaltung.txt")
             qt = QtGui.QMessageBox()
             qt.setIcon(QtGui.QMessageBox.Information)
             qt.setWindowTitle("Info")

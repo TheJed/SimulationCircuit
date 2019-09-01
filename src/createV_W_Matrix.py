@@ -211,7 +211,6 @@ def buildWMatrix(loopList, kantenList, numberOfKanten, u_matrix):
         w_matrix.append(w_eintrag)
 
     w_matrix = np.array(w_matrix)
-    print("W-Matrix: \n", w_matrix.T)
 
     #TODO hier schöner machen
     if not w_matrix.tolist():
