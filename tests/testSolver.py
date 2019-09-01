@@ -115,11 +115,13 @@ class SolverTests(unittest.TestCase):
         solv.createInzidenzMatrices()
         solv.startwertEntkopplung(solv.potencialList, 0)
 
-        gr_not_vc = solv.gr_not_vc([0], [[0, 0]], 0)
+        gr_not_vc = solv.gr_not_vc([0,0], [0], 0)
 
-        expected_gr_not_vc = [1.14, 1.14]
+        expected_gr_not_vc = [1.14,1.14]
 
         self.assertAlmostEqual(gr_not_vc[0], expected_gr_not_vc[0], places=15, msg=None, delta=None)
+        
+        self.assertAlmostEqual(gr_not_vc[1], expected_gr_not_vc[1], places=15, msg=None, delta=None)
 
     def testFunctionGXT(self):
 
@@ -133,7 +135,7 @@ class SolverTests(unittest.TestCase):
         solv.createInzidenzMatrices()
         solv.startwertEntkopplung(solv.potencialList, 0)
 
-        gxt = solv.g_xyt([[0, 0]], [[0],[0]], 0)
+        gxt = solv.g_xyt([0], [0,0], 0)
 
         expected_gxt = [-3.86, 0]
 
@@ -172,7 +174,7 @@ class SolverTests(unittest.TestCase):
 
         func1 = solv.function1([-90], [0], [-999, -900], 0)
 
-        expected_func1 = [0.86]
+        expected_func1 = [-1.14]
 
         self.assertAlmostEqual(func1[0], expected_func1[0], places=15, msg=None, delta=None)
 
@@ -233,7 +235,7 @@ class SolverTests(unittest.TestCase):
 
         abl_c_t = solv.ableitung_c_nacht([-90, -90], 0)
 
-        expected_abl_c_t = [1, 1]
+        expected_abl_c_t = [0, 0]
 
         self.assertAlmostEqual(abl_c_t[0], expected_abl_c_t[0], places=15, msg=None, delta=None)
         self.assertAlmostEqual(abl_c_t[1], expected_abl_c_t[1], places=15, msg=None, delta=None)
@@ -360,6 +362,7 @@ class SolverTests(unittest.TestCase):
         e = solv.zurueckcoppler(ec, er, 0)[0]
 
         for x in range(len(e)):
+            
             #self.assertAlmostEqual(sum[x], solv.potencialList[x], places=15, msg=None, delta=None)
             self.assertTrue(float(e[x]) == float(solv.potencialList[x]))
        

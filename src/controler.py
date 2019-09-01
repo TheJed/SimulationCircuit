@@ -26,7 +26,7 @@ class Controler:
         for s in pathToProgramm:
             self.pathToRessources += s +"\\" 
         self.pathToRessources += "resources\\"""
-        self.pathToRessources = "../resources"
+        self.pathToRessources = "../resources/"
 
 
     def createCircuit(self, choosen, function):
@@ -92,7 +92,8 @@ class Controler:
 
     def undoAddComponent(self):
         """Deletes the last added Component from the drawing and from the netlist"""
-        self.netHandler.fileLines.pop()
+        if self.netHandler.fileLines:
+            self.netHandler.fileLines.pop()
         return self.circuitDrawing.undo()
 
     def drawCircuit(self):

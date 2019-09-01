@@ -41,47 +41,55 @@ class Solver:
         self.inzidenz_l = self.schaltung.inzidenz_l
         self.inzidenz_i = self.schaltung.inzidenz_i
 
-                
+        potenziale = self.schaltung.potenzialNumber-1
+
         #-----------Delete voltage sources-----------
-        self.c_v = cpq.findConnectedComponents(self.inzidenz_v.transpose(), self.schaltung.potenzialNumber-1)
+        self.c_v = cpq.findConnectedComponents(self.inzidenz_v.transpose(), potenziale)
         self.q_v = cpq.createQArray(self.c_v, self.isMasse(self.inzidenz_v))
         self.p_v = cpq.createPArray(self.c_v, self.isMasse(self.inzidenz_v))
 
         self.ac_v = self.inzidenz_c
         if not 0 in self.inzidenz_c.shape:  
             self.ac_v = np.dot(self.q_v.transpose(), (self.inzidenz_c))
+            potenziale = self.ac_v.shape[0]
 
         self.al_v = self.inzidenz_l
         if not 0 in self.inzidenz_l.shape:  
             self.al_v = np.dot(self.q_v.transpose(), self.inzidenz_l)
+            potenziale = self.al_v.shape[0]
 
         self.ar_v = self.i_r
         if not 0 in self.inzidenz_r.shape:  
             self.ar_v = np.dot(np.transpose(self.q_v), self.inzidenz_r)
+            potenziale = self.ar_v.shape[0]
 
         self.ai_v = self.inzidenz_i
         if not 0 in self.inzidenz_i.shape:  
             self.ai_v = np.dot(self.q_v.transpose(), (self.inzidenz_i))
+            potenziale = self.ai_v.shape[0]
 
         #-----------Delete capacitors-----------
-        self.c_c = cpq.findConnectedComponents(np.array(self.ac_v).transpose(), self.schaltung.potenzialNumber-1)
+        self.c_c = cpq.findConnectedComponents(np.array(self.ac_v).transpose(), potenziale)
         self.q_c = cpq.createQArray(self.c_c, self.isMasse(self.ac_v))
         self.p_c = cpq.createPArray(self.c_c, self.isMasse(self.ac_v))
 
         self.al_vc = self.inzidenz_l
         if not 0 in self.inzidenz_l.shape:   
             self.al_vc = np.dot(self.q_c.transpose(), self.al_v)
+            potenziale = self.al_vc.shape[0]
 
         self.ai_vc = self.inzidenz_i
         if not 0 in self.inzidenz_i.shape:  
             self.ai_vc = np.dot(self.q_c.transpose(), self.ai_v)
+            potenziale = self.ai_vc.shape[0]
 
         self.ar_vc = self.inzidenz_r
         if not 0 in self.inzidenz_r.shape:  
             self.ar_vc = np.dot(self.q_c.transpose(), self.ar_v)
+            potenziale = self.ar_vc.shape[0]
 
         #-----------Delete Resistors-----------
-        self.c_r = cpq.findConnectedComponents(np.array(self.ar_vc).transpose(), self.schaltung.potenzialNumber-1)
+        self.c_r = cpq.findConnectedComponents(np.array(self.ar_vc).transpose(), potenziale)
         self.q_r = cpq.createQArray(self.c_r, self.isMasse(self.ar_vc))
         self.p_r = cpq.createPArray(self.c_r, self.isMasse(self.ar_vc))
 
@@ -144,6 +152,7 @@ class Solver:
         return self.solution
 
     def g_xyt(self, ec,e_r,t):
+
         """This function provides a for the simulation nessesary function (simulation of resistors).
         Therefore it contains no business-logic, only simple math-operations to build the function
         
@@ -368,12 +377,13 @@ class Solver:
         :return: Returns the builded function.
         :rtype: function."""
 
-        if not (self.inzidenz_v):
+        if not (self.inzidenz_v.any()):
             return np.zeros((self.p_v.shape))
 
+       
         matrixA = np.dot(np.transpose(self.inzidenz_v), self.p_v)
         ergebnis = linalgSolver.cg(matrixA,self.v_t(t))
-        return ergebnis   
+        return ergebnis[0]
 
     def v_t(self, t):
         """This function returns the voltage values of the voltage-sources for a point in time
@@ -384,7 +394,7 @@ class Solver:
 
         ergebnis = []
         for function in self.vt:
-            ergebnis.append(function(0,t))
+            ergebnis.append(function(t))
 
         return np.array(ergebnis)
 
@@ -525,6 +535,7 @@ class Solver:
         :param e: list of starting values for the potencials
         :param t: actual point in time the simulation is at
         """
+        e = [float(x) for x in e]
         e = np.array(e)
 
         #--------calculate e_v--------
@@ -697,5 +708,6 @@ class Solver:
 
         self.er = optimize.newton(f, self.er,tol=1e-10, maxiter=50000, disp=False)
         e = self.zurueckcoppler(self.ec, self.er, t)
+
         self.solution.append(([e], t))
         return self.er

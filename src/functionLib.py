@@ -8,8 +8,8 @@ import math
 
 #Vektor with Function and Ableitung (nach Variable und Zeit)
 def r_change():
-    function = lambda x, t: 40
-    function_dx = lambda x, t: 40
+    function = lambda x, t: x + 40 +t
+    function_dx = lambda x, t: 1
     return np.array([function, function_dx])
         
 def r_constant():
@@ -18,20 +18,20 @@ def r_constant():
     return np.array([function, function_dx])
 
 def c_change():
-    function = lambda x, t: 20
-    function_dx = lambda x, t: 20
-    function_dt = lambda x, t: 20
+    function = lambda x, t: x+20 + 23*t
+    function_dx = lambda x, t: 1
+    function_dt = lambda x, t: 23
     return np.array([function, function_dx, function_dt])
     
 def c_constant():
-    function = lambda x, t: 1.43*x + t
+    function = lambda x, t: 1.43*x
     function_dx = lambda x, t: 1.43
-    function_dt = lambda x, t: 1
+    function_dt = lambda x, t: 0
     return np.array([function, function_dx, function_dt])
 
 def l_change():
-    function = lambda x, t: 20
-    function_dx = lambda x, t: 20
+    function = lambda x, t: x+20 +11*t
+    function_dx = lambda x, t: 1
     function_dt = lambda x, t: 20
     return np.array([function, function_dx, function_dt])
 

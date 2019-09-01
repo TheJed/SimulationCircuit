@@ -34,7 +34,7 @@ class CircuitDrawing():
 
         self.potenzialList = []
 
-        self.circuitDrawing = schem.Drawing()
+        self.circuitDrawing = schem.Drawing(unit=4)
 
         self.circuitDrawing.push()
 
@@ -93,12 +93,12 @@ class CircuitDrawing():
        
         if eFromIndex-1 >= 0 and eToIndex-1 >= 0:
             k = self.circuitDrawing.add(componentType, xy=eFrom.start, to=eTo.end)
-            self.circuitDrawing.labelI(k, name)
+            self.circuitDrawing.labelI(k)
             self.wasFullyConnectedBeforeUndo.append(True)
             self.fromPotenzial = eFromIndex-1
         elif eFromIndex-1 > 0 and eToIndex-1 < 0:
             k = self.circuitDrawing.add(componentType, d=direction, xy=eFrom.start)
-            self.circuitDrawing.labelI(k, name)
+            self.circuitDrawing.labelI(k)
             elabel = "E" + str(self.potenzialNummer)
             self.potenzialList.append(self.circuitDrawing.add(e.DOT, d=direction, label= elabel))
             
@@ -109,13 +109,22 @@ class CircuitDrawing():
 
         else:
             k = self.circuitDrawing.add(componentType, d=direction, xy=self.circuitDrawing._elm_list[-1].end)
-            self.circuitDrawing.labelI(k, name)
+            self.circuitDrawing.labelI(k)
             elabel = "E" + str(self.potenzialNummer)
             self.potenzialList.append(self.circuitDrawing.add(e.DOT, d=direction, label= elabel))
             
             self.potenzialNummer+=1
             self.fromPotenzial = (self.potenzialNummer - 1)
             self.wasFullyConnectedBeforeUndo.append(False)
+
+        if direction == "left":
+            k.add_label(name, loc = "top")
+        elif direction == "right":
+            k.add_label(name, loc = "top")
+        elif direction == "up":
+            k.add_label(name, loc= "bot")
+        else:
+            k.add_label(name, loc= "bot")
 
         self.circuitDrawing.draw()
         self.circuitDrawing.save(self.pathToRessources + "ergebnis.png")

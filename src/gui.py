@@ -651,6 +651,7 @@ class Window(QtGui.QApplication):
 
         self.potenzialParameters.close()
 
+
         try:
             self.controler.writeNetList("Schaltung.txt")
             self.controler.simulate("Schaltung.txt")
@@ -667,7 +668,7 @@ class Window(QtGui.QApplication):
             qt.exec()
 
         for potencial in range(len(self.potenzialDropDownFrom)-2):
-            self.potenzialDropDown.addItem("Potencial " + str(potencial))
+            self.potenzialDropDown.addItem("Potencial " + str(potencial+1))
 
         self.potenzialDropDown.show()
         self.buttonPlotPotenzial.show()
